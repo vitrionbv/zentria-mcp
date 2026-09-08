@@ -1,0 +1,59 @@
+{
+  "name": "@vitrion/zentria-mcp",
+  "version": "1.0.0",
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "description": "Zentria MCP server — public team API for AI assistants via Model Context Protocol",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "zentria-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts",
+    "test": "vitest run",
+    "inspector": "npx @modelcontextprotocol/inspector node dist/index.js",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "zentria",
+    "crm",
+    "sales",
+    "api"
+  ],
+  "author": {
+    "name": "Vitrion",
+    "email": "hello@vitrion.nl"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/server": "^2.0.0",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^3.0.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vitrionbv/zentria-mcp.git"
+  },
+  "homepage": "https://github.com/vitrionbv/zentria-mcp#readme",
+  "bugs": {
+    "url": "https://github.com/vitrionbv/zentria-mcp/issues"
+  }
+}
