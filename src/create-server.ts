@@ -1,16 +1,15 @@
 import { McpServer } from "@modelcontextprotocol/server";
-import { ZentriaClient } from "./zentria/client.js";
 import { registerCrmTools } from "./tools/crm.js";
 import { registerCustomerContactTools } from "./tools/customer-contacts.js";
 import { registerCustomerTools } from "./tools/customers.js";
 import { registerDiscoveryTools } from "./tools/discovery.js";
 import { registerMemberTools, registerSettingsTools } from "./tools/members.js";
+import { registerSalesActivityTools } from "./tools/sales-activities.js";
+import { registerSalesDealTools } from "./tools/sales-deals.js";
 import {
   registerSalesFormTools,
   registerSalesSubmissionTools,
 } from "./tools/sales-forms.js";
-import { registerSalesActivityTools } from "./tools/sales-activities.js";
-import { registerSalesDealTools } from "./tools/sales-deals.js";
 import { registerSalesNoteTools } from "./tools/sales-notes.js";
 import { registerSalesOrganizationTools } from "./tools/sales-organizations.js";
 import { registerSalesPeopleTools } from "./tools/sales-people.js";
@@ -19,6 +18,7 @@ import { registerStlTools } from "./tools/stl.js";
 import { registerTodoTools } from "./tools/todos.js";
 import { registerWebhookTools } from "./tools/webhooks.js";
 import { PACKAGE_NAME, PACKAGE_VERSION } from "./version.js";
+import { ZentriaClient } from "./zentria/client.js";
 
 export function createServer(): McpServer {
   const server = new McpServer({

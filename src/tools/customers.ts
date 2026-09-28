@@ -72,6 +72,7 @@ export function registerCustomerTools(server: McpServer, client: ZentriaClient):
     },
     async (input) => {
       const { id, ...body } = input;
+
       return client.request({
         method: "PUT",
         path: `/api/public/customers/${encodePathSegment(id)}`,

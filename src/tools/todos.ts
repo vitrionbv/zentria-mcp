@@ -21,6 +21,7 @@ export function registerTodoTools(server: McpServer, client: ZentriaClient): voi
     },
     async (input) => {
       const teamId = await client.getBoundTeamId();
+
       return client.request({
         path: `/api/public/teams/${encodePathSegment(teamId)}/todos`,
         query: paginationQuery(input),
@@ -42,6 +43,7 @@ export function registerTodoTools(server: McpServer, client: ZentriaClient): voi
     },
     async (input) => {
       const teamId = await client.getBoundTeamId();
+
       return client.request({
         method: "POST",
         path: `/api/public/teams/${encodePathSegment(teamId)}/todos`,
@@ -78,6 +80,7 @@ export function registerTodoTools(server: McpServer, client: ZentriaClient): voi
     },
     async (input) => {
       const { id, ...body } = input;
+
       return client.request({
         method: "PUT",
         path: `/api/public/todos/${encodePathSegment(id)}`,

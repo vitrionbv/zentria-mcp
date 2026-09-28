@@ -80,6 +80,7 @@ export function registerSalesActivityTools(server: McpServer, client: ZentriaCli
     },
     async (input) => {
       const { id, ...body } = input;
+
       return client.request({
         method: "PATCH",
         path: `/api/public/sales/activities/${encodePathSegment(id)}`,

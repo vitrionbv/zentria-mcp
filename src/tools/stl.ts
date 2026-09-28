@@ -76,6 +76,7 @@ export function registerStlTools(server: McpServer, client: ZentriaClient): void
     },
     async (input) => {
       const { id, ...body } = input;
+
       return client.request({
         method: "PUT",
         path: `/api/public/stl/flows/${encodePathSegment(id)}`,
@@ -163,6 +164,7 @@ export function registerStlTools(server: McpServer, client: ZentriaClient): void
     },
     async (input) => {
       const { id, ...body } = input;
+
       return client.request({
         method: "PUT",
         path: `/api/public/stl/sms-templates/${encodePathSegment(id)}`,

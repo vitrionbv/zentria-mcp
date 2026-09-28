@@ -86,6 +86,7 @@ export class ZentriaClient {
     };
 
     let body: string | undefined;
+
     if (options.body !== undefined && method !== "GET") {
       headers["Content-Type"] = "application/json";
       body = JSON.stringify(options.body);
@@ -96,11 +97,13 @@ export class ZentriaClient {
     if (response.status === 429 && !isRetry) {
       const retryAfter = parseRetryAfter(response.headers) ?? 1;
       await sleep(retryAfter * 1000);
+
       return this.executeRequest(options, true);
     }
 
     if (!response.ok) {
       const errorBody = await readResponseBody(response);
+
       throw zentriaErrorFromResponse(response.status, errorBody, response.headers);
     }
 
@@ -114,6 +117,7 @@ export class ZentriaClient {
 
 async function readResponseBody(response: Response): Promise<unknown> {
   const text = await response.text();
+
   if (!text) {
     return undefined;
   }

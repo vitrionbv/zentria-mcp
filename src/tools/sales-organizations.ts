@@ -76,6 +76,7 @@ export function registerSalesOrganizationTools(server: McpServer, client: Zentri
     },
     async (input) => {
       const { id, ...body } = input;
+
       return client.request({
         method: "PUT",
         path: `/api/public/sales/organizations/${encodePathSegment(id)}`,

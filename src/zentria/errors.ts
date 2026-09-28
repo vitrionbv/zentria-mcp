@@ -66,6 +66,7 @@ export function zentriaErrorFromResponse(
       return new ZentriaValidationError(messageFromBody ?? "Validation failed", body);
     case 429: {
       const retryAfter = parseRetryAfter(headers);
+
       return new ZentriaRateLimitError(
         messageFromBody ?? "Rate limit exceeded",
         retryAfter,
@@ -112,8 +113,10 @@ function extractErrorMessage(body: unknown): string | undefined {
 
 export function parseRetryAfter(headers: Headers): number | undefined {
   const retryAfter = headers.get("Retry-After");
+
   if (retryAfter) {
     const seconds = Number.parseInt(retryAfter, 10);
+
     if (!Number.isNaN(seconds)) {
       return Math.min(seconds, 60);
     }

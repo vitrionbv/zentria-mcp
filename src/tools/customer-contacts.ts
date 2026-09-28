@@ -24,6 +24,7 @@ export function registerCustomerContactTools(server: McpServer, client: ZentriaC
     },
     async (input) => {
       const { customerId, ...pagination } = input;
+
       return client.request({
         path: `/api/public/customers/${encodePathSegment(customerId)}/contacts`,
         query: paginationQuery(pagination),
@@ -47,6 +48,7 @@ export function registerCustomerContactTools(server: McpServer, client: ZentriaC
     },
     async (input) => {
       const { customerId, ...body } = input;
+
       return client.request({
         method: "POST",
         path: `/api/public/customers/${encodePathSegment(customerId)}/contacts`,
@@ -84,6 +86,7 @@ export function registerCustomerContactTools(server: McpServer, client: ZentriaC
     },
     async (input) => {
       const { id, ...body } = input;
+
       return client.request({
         method: "PUT",
         path: `/api/public/contacts/${encodePathSegment(id)}`,

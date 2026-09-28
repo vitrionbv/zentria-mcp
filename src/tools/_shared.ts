@@ -34,6 +34,7 @@ export function errorResult(error: unknown): {
   }
 
   const message = error instanceof Error ? error.message : String(error);
+
   return {
     content: [{ type: "text", text: message }],
     isError: true,
@@ -112,9 +113,11 @@ export function paginationQuery(input: {
   if (input.q) {
     query.q = input.q;
   }
+
   if (input.page !== undefined) {
     query.page = input.page;
   }
+
   if (input.itemsPerPage !== undefined) {
     query.itemsPerPage = input.itemsPerPage;
   }

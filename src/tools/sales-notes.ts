@@ -73,6 +73,7 @@ export function registerSalesNoteTools(server: McpServer, client: ZentriaClient)
     },
     async (input) => {
       const { id, ...body } = input;
+
       return client.request({
         method: "PATCH",
         path: `/api/public/sales/notes/${encodePathSegment(id)}`,

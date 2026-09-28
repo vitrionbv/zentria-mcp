@@ -25,9 +25,11 @@ export function registerSalesDealTools(server: McpServer, client: ZentriaClient)
     async (input) => {
       const { pipelineId, ...pagination } = input;
       const query = paginationQuery(pagination);
+
       if (pipelineId !== undefined) {
         query.pipelineId = pipelineId;
       }
+
       return client.request({ path: "/api/public/sales/deals", query });
     },
   );
@@ -91,6 +93,7 @@ export function registerSalesDealTools(server: McpServer, client: ZentriaClient)
     },
     async (input) => {
       const { id, ...body } = input;
+
       return client.request({
         method: "PUT",
         path: `/api/public/sales/deals/${encodePathSegment(id)}`,
