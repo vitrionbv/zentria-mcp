@@ -84,6 +84,8 @@ const EXPECTED_TOOLS = [
   "list-business-profile-posts",
   "create-business-profile-post",
   "delete-business-profile-post",
+  "get-location-performance",
+  "list-location-search-keywords",
   "list-webhooks",
   "create-webhook",
   "get-webhook",

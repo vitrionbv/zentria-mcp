@@ -299,4 +299,59 @@ export function registerBusinessProfileTools(server: McpServer, client: ZentriaC
         path: `${BASE}/posts/${encodePathSegment(input.id)}`,
       }),
   );
+
+  registerJsonTool(
+    server,
+    "get-location-performance",
+    {
+      description:
+        "Results of a Business Profile location: views, calls, website clicks, direction requests, conversations and bookings with the previous period, the views split (search, maps, mobile, desktop) and a time series (GET /api/public/business-profiles/locations/{locationId}/performance). Google reports these numbers 2 to 3 days late, see latestDate in the response. Google does not link search terms to calls, so calls cannot be traced back to a keyword. Scope: business-profiles:read.",
+      annotations: { readOnlyHint: true },
+      inputSchema: z.object({
+        locationId: z.number().int().positive().describe("Location id."),
+        period: z
+          .enum(["last_7", "last_28", "last_90", "this_month", "last_month", "custom"])
+          .optional()
+          .describe("Period preset. Default last_28. Use custom together with from and to."),
+        from: z.string().optional().describe("Start date (YYYY-MM-DD), for period custom."),
+        to: z.string().optional().describe("End date (YYYY-MM-DD), for period custom."),
+        granularity: z
+          .enum(["day", "week"])
+          .optional()
+          .describe("Series buckets. Default day, or week for periods over 62 days."),
+      }),
+    },
+    async (input) =>
+      client.request({
+        path: `${BASE}/locations/${encodePathSegment(input.locationId)}/performance`,
+        query: query(
+          {},
+          { period: input.period, from: input.from, to: input.to, granularity: input.granularity },
+        ),
+      }),
+  );
+
+  registerJsonTool(
+    server,
+    "list-location-search-keywords",
+    {
+      description:
+        "List the search terms that showed a Business Profile location in one month, most used first (GET /api/public/business-profiles/locations/{locationId}/search-keywords). Rare terms have no count but a threshold: the term was used fewer than that many times. Data is 2 to 3 days late and Google does not link search terms to calls. Scope: business-profiles:read.",
+      annotations: { readOnlyHint: true },
+      inputSchema: z.object({
+        ...paginationSchema,
+        locationId: z.number().int().positive().describe("Location id."),
+        month: z
+          .string()
+          .regex(/^\d{4}-\d{2}$/)
+          .optional()
+          .describe("Month as YYYY-MM. Default: the newest month with data."),
+      }),
+    },
+    async (input) =>
+      client.request({
+        path: `${BASE}/locations/${encodePathSegment(input.locationId)}/search-keywords`,
+        query: query(input, { month: input.month }),
+      }),
+  );
 }
