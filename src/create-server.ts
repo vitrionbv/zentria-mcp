@@ -1,4 +1,5 @@
 import { McpServer } from "@modelcontextprotocol/server";
+import { registerBusinessProfileTools } from "./tools/business-profiles.js";
 import { registerCrmTools } from "./tools/crm.js";
 import { registerCustomerContactTools } from "./tools/customer-contacts.js";
 import { registerCustomerTools } from "./tools/customers.js";
@@ -42,6 +43,7 @@ export function createServer(): McpServer {
   registerCustomerContactTools(server, client);
   registerCrmTools(server, client);
   registerStlTools(server, client);
+  registerBusinessProfileTools(server, client);
   registerWebhookTools(server, client);
   registerMemberTools(server, client);
   registerSettingsTools(server, client);
