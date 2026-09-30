@@ -37,7 +37,7 @@ export function registerBusinessProfileTools(server: McpServer, client: ZentriaC
     "list-business-profile-locations",
     {
       description:
-        "List Google Business Profile locations (GET /api/public/business-profiles/locations). Scope: business-profiles:read. Only available when Business Profiles is on for the team.",
+        "List Google Business Profile locations (GET /api/public/business-profiles/locations). Each location includes replyProfileId and replySettings (own reply settings, null when it follows a reply profile). Scope: business-profiles:read. Only available when Business Profiles is on for the team.",
       annotations: { readOnlyHint: true },
       inputSchema: z.object({
         ...paginationSchema,
@@ -168,7 +168,7 @@ export function registerBusinessProfileTools(server: McpServer, client: ZentriaC
     "list-business-profile-changes",
     {
       description:
-        "List changes Google made to locations (GET /api/public/business-profiles/changes). Use status open for changes waiting for a decision. Scope: business-profiles:read.",
+        "List changes Google made to locations (GET /api/public/business-profiles/changes). Use status open for changes waiting for a decision. Each change includes customerName and locationUrl (link to the location in Zentria). Scope: business-profiles:read.",
       annotations: { readOnlyHint: true },
       inputSchema: z.object({
         ...pageSchema,
