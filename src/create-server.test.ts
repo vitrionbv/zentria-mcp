@@ -80,6 +80,7 @@ const EXPECTED_TOOLS = [
   "reject-business-profile-review-reply",
   "list-business-profile-changes",
   "accept-business-profile-change",
+  "dismiss-business-profile-change",
   "reject-business-profile-change",
   "list-business-profile-posts",
   "create-business-profile-post",

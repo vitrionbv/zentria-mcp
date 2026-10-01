@@ -91,7 +91,7 @@ Set `ZENTRIA_API_KEY` in your shell environment or MCP host config.
 | **Customers** | `list-customers`, `create-customer`, `archive-customer`, `list-customer-contacts` |
 | **CRM** | `list-crm-leads`, `approve-crm-lead`, `reject-crm-lead` |
 | **Speed to Lead** | `list-stl-flows`, `list-stl-sms-templates`, `list-stl-leads` |
-| **Business Profiles** | `list-business-profile-locations`, `list-business-profile-reviews`, `approve-business-profile-review-reply`, `accept-business-profile-change`, `create-business-profile-post`, `get-location-performance`, `list-location-search-keywords` (scopes `business-profiles:read` / `business-profiles:write`, only when the module is on) |
+| **Business Profiles** | `list-business-profile-locations`, `list-business-profile-reviews`, `approve-business-profile-review-reply`, `accept-business-profile-change`, `dismiss-business-profile-change`, `create-business-profile-post`, `get-location-performance`, `list-location-search-keywords` (scopes `business-profiles:read` / `business-profiles:write`, only when the module is on) |
 | **Webhooks** | `list-webhooks`, `create-webhook` (secret returned once) |
 | **Members** | `list-members`, `invite-member`, `change-member-role` |
 | **Settings** | `get-settings`, `get-integrations` |

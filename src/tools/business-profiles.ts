@@ -37,7 +37,7 @@ export function registerBusinessProfileTools(server: McpServer, client: ZentriaC
     "list-business-profile-locations",
     {
       description:
-        "List Google Business Profile locations (GET /api/public/business-profiles/locations). Each location includes replyProfileId and replySettings (own reply settings, null when it follows a reply profile). Scope: business-profiles:read. Only available when Business Profiles is on for the team.",
+        "List Google Business Profile locations (GET /api/public/business-profiles/locations). Each location includes categories (display names), standardProfile (how the Google profile should look according to Zentria: categories, description, services, service area, opening hours and date, address, social, chat and booking links; null until imported) and replyProfileId/replySettings. Use category to analyse locations per category. Scope: business-profiles:read. Only available when Business Profiles is on for the team.",
       annotations: { readOnlyHint: true },
       inputSchema: z.object({
         ...paginationSchema,
@@ -45,6 +45,10 @@ export function registerBusinessProfileTools(server: McpServer, client: ZentriaC
         campaignId: z.number().int().positive().optional().describe("Only locations linked to this campaign."),
         verified: z.boolean().optional().describe("Filter on verification."),
         syncEnabled: z.boolean().optional().describe("Filter on review sync being enabled."),
+        category: z
+          .string()
+          .optional()
+          .describe("Only locations with this category (primary or additional), exact Dutch display name, e.g. Loodgieter."),
       }),
     },
     async (input) =>
@@ -56,6 +60,7 @@ export function registerBusinessProfileTools(server: McpServer, client: ZentriaC
             campaign_id: input.campaignId,
             verified: input.verified,
             sync_enabled: input.syncEnabled,
+            category: input.category,
           }),
           ...(input.q ? { q: input.q } : {}),
         },
@@ -67,7 +72,7 @@ export function registerBusinessProfileTools(server: McpServer, client: ZentriaC
     "get-business-profile-location",
     {
       description:
-        "Fetch a Business Profile location (GET /api/public/business-profiles/locations/{id}). Scope: business-profiles:read.",
+        "Fetch a Business Profile location (GET /api/public/business-profiles/locations/{id}), including its categories and standardProfile. Scope: business-profiles:read.",
       annotations: { readOnlyHint: true },
       inputSchema: z.object({
         id: z.number().int().positive().describe("Location id."),
@@ -168,7 +173,7 @@ export function registerBusinessProfileTools(server: McpServer, client: ZentriaC
     "list-business-profile-changes",
     {
       description:
-        "List changes Google made to locations (GET /api/public/business-profiles/changes). Use status open for changes waiting for a decision. Each change includes customerName and locationUrl (link to the location in Zentria). Scope: business-profiles:read.",
+        "List differences between the standard profile in Zentria and what Google shows (GET /api/public/business-profiles/changes). Use status open for differences waiting for someone. fields holds per field the standard value (ours) and Google's value (google); attribute fields are named attributes.url_facebook, attributes.url_whatsapp and so on. Each change includes customerName and locationUrl (link to the location in Zentria). Scope: business-profiles:read.",
       annotations: { readOnlyHint: true },
       inputSchema: z.object({
         ...pageSchema,
@@ -191,7 +196,7 @@ export function registerBusinessProfileTools(server: McpServer, client: ZentriaC
     "accept-business-profile-change",
     {
       description:
-        "Accept the values Google set on a location (POST /api/public/business-profiles/changes/{id}/accept). Fails with 422 when the change was already handled. Scope: business-profiles:write.",
+        "Google is right: Google's values become the new standard profile values (POST /api/public/business-profiles/changes/{id}/accept). Nothing is sent to Google. Fails with 422 when the change was already handled. Scope: business-profiles:write.",
       inputSchema: z.object({
         id: z.number().int().positive().describe("Change id."),
       }),
@@ -206,10 +211,28 @@ export function registerBusinessProfileTools(server: McpServer, client: ZentriaC
 
   registerJsonTool(
     server,
+    "dismiss-business-profile-change",
+    {
+      description:
+        "Mark a change as handled without changing the standard or Google, for example after fixing it at Google yourself (POST /api/public/business-profiles/changes/{id}/dismiss). The same difference is not reported again. Fails with 422 when the change was already handled. Scope: business-profiles:write.",
+      inputSchema: z.object({
+        id: z.number().int().positive().describe("Change id."),
+      }),
+    },
+    async (input) =>
+      client.request({
+        method: "POST",
+        path: `${BASE}/changes/${encodePathSegment(input.id)}/dismiss`,
+        body: {},
+      }),
+  );
+
+  registerJsonTool(
+    server,
     "reject-business-profile-change",
     {
       description:
-        "Reject a change: the previous values are restored at Google in the background (POST /api/public/business-profiles/changes/{id}/reject). Fails with 422 when the change was already handled. Scope: business-profiles:write.",
+        "Reject a change: the standard profile values are written back to Google in the background (POST /api/public/business-profiles/changes/{id}/reject). Only when explicitly asked; the usual actions are accept (Google is right) and dismiss. Fails with 422 when the change was already handled. Scope: business-profiles:write.",
       annotations: { destructiveHint: true },
       inputSchema: z.object({
         id: z.number().int().positive().describe("Change id."),
