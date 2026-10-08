@@ -14,15 +14,25 @@ export function registerCustomerTools(server: McpServer, client: ZentriaClient):
     server,
     "list-customers",
     {
-      description: "List customers (GET /api/public/customers). Scope: customers:read.",
+      description:
+        "List customers (GET /api/public/customers). Archived customers are left out unless status is archived or all; archivedAt is set on archived ones. Scope: customers:read.",
       annotations: { readOnlyHint: true },
-      inputSchema: z.object({ ...paginationSchema }),
-    },
-    async (input) =>
-      client.request({
-        path: "/api/public/customers",
-        query: paginationQuery(input),
+      inputSchema: z.object({
+        ...paginationSchema,
+        status: z
+          .enum(["active", "archived", "all"])
+          .optional()
+          .describe("active (default), archived or all."),
       }),
+    },
+    async (input) => {
+      const { status, ...page } = input;
+
+      return client.request({
+        path: "/api/public/customers",
+        query: { ...paginationQuery(page), ...(status ? { status } : {}) },
+      });
+    },
   );
 
   registerJsonTool(
@@ -85,7 +95,8 @@ export function registerCustomerTools(server: McpServer, client: ZentriaClient):
     server,
     "archive-customer",
     {
-      description: "Archive a customer (PATCH /api/public/customers/{id}/archive). Scope: customers:write.",
+      description:
+        "Archive a customer (PATCH /api/public/customers/{id}/archive). Everything is kept; the customer leaves lists and pickers, is no longer invoiced and gets no weekly lead mail. Undo with restore-customer. Scope: customers:write.",
       annotations: { destructiveHint: true },
       inputSchema: z.object({
         id: z.number().int().positive().describe("Customer id."),
@@ -95,6 +106,24 @@ export function registerCustomerTools(server: McpServer, client: ZentriaClient):
       client.request({
         method: "PATCH",
         path: `/api/public/customers/${encodePathSegment(input.id)}/archive`,
+        body: {},
+      }),
+  );
+
+  registerJsonTool(
+    server,
+    "restore-customer",
+    {
+      description:
+        "Restore an archived customer so it is active again (PATCH /api/public/customers/{id}/restore). Scope: customers:write.",
+      inputSchema: z.object({
+        id: z.number().int().positive().describe("Customer id."),
+      }),
+    },
+    async (input) =>
+      client.request({
+        method: "PATCH",
+        path: `/api/public/customers/${encodePathSegment(input.id)}/restore`,
         body: {},
       }),
   );

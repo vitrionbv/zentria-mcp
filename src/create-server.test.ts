@@ -49,6 +49,7 @@ const EXPECTED_TOOLS = [
   "get-customer",
   "update-customer",
   "archive-customer",
+  "restore-customer",
   "list-customer-contacts",
   "create-customer-contact",
   "get-contact",
