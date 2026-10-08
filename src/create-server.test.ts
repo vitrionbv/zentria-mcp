@@ -75,6 +75,8 @@ const EXPECTED_TOOLS = [
   "list-business-profile-locations",
   "get-business-profile-location",
   "list-business-profile-reviews",
+  "dismiss-business-profile-review",
+  "restore-business-profile-review",
   "list-business-profile-review-replies",
   "approve-business-profile-review-reply",
   "reject-business-profile-review-reply",

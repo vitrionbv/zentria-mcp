@@ -86,13 +86,17 @@ export function registerBusinessProfileTools(server: McpServer, client: ZentriaC
     "list-business-profile-reviews",
     {
       description:
-        "List Google reviews, newest first (GET /api/public/business-profiles/reviews). Scope: business-profiles:read.",
+        "List Google reviews, newest first (GET /api/public/business-profiles/reviews). Each review has dismissedAt (set when the team took it out of the unanswered queue without replying) and replyBlocked (Google refused a reply, usually because it hides the review on Maps). For the reviews still to answer use answered=false and dismissed=false. Scope: business-profiles:read.",
       annotations: { readOnlyHint: true },
       inputSchema: z.object({
         ...pageSchema,
         locationId: z.number().int().positive().optional().describe("Only reviews of this location."),
         stars: z.number().int().min(1).max(5).optional().describe("Only reviews with this star rating."),
         answered: z.boolean().optional().describe("true for reviews with a reply, false for unanswered ones."),
+        dismissed: z
+          .boolean()
+          .optional()
+          .describe("true for reviews dismissed without a reply, false for reviews that are not dismissed."),
         since: z.string().optional().describe("ISO-8601 date or datetime: only reviews created at or after it."),
       }),
     },
@@ -103,8 +107,45 @@ export function registerBusinessProfileTools(server: McpServer, client: ZentriaC
           location_id: input.locationId,
           stars: input.stars,
           answered: input.answered,
+          dismissed: input.dismissed,
           since: input.since,
         }),
+      }),
+  );
+
+  registerJsonTool(
+    server,
+    "dismiss-business-profile-review",
+    {
+      description:
+        "Dismiss an unanswered review: it leaves the unanswered queue without a reply and nothing is sent to Google (POST /api/public/business-profiles/reviews/{id}/dismiss). Use it for reviews with replyBlocked true, or when the team decides not to answer. Open reply drafts are closed. Fails with 422 when the review already has a reply. Scope: business-profiles:write.",
+      inputSchema: z.object({
+        id: z.number().int().positive().describe("Review id."),
+      }),
+    },
+    async (input) =>
+      client.request({
+        method: "POST",
+        path: `${BASE}/reviews/${encodePathSegment(input.id)}/dismiss`,
+        body: {},
+      }),
+  );
+
+  registerJsonTool(
+    server,
+    "restore-business-profile-review",
+    {
+      description:
+        "Put a dismissed review back in the unanswered queue (POST /api/public/business-profiles/reviews/{id}/restore). Scope: business-profiles:write.",
+      inputSchema: z.object({
+        id: z.number().int().positive().describe("Review id."),
+      }),
+    },
+    async (input) =>
+      client.request({
+        method: "POST",
+        path: `${BASE}/reviews/${encodePathSegment(input.id)}/restore`,
+        body: {},
       }),
   );
 
