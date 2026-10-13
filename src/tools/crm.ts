@@ -101,4 +101,67 @@ export function registerCrmTools(server: McpServer, client: ZentriaClient): void
     async (input) =>
       client.request({ path: `/api/public/crm/submissions/${encodePathSegment(input.id)}` }),
   );
+
+  registerJsonTool(
+    server,
+    "list-crm-calls",
+    {
+      description:
+        "List Voys phone calls of the team, newest first (GET /api/public/crm/calls). Each call has direction, answered, outcome, duration, numbers, AI summary and the linked lead id. Use get-crm-call for the transcript. Scope: crm:read.",
+      annotations: { readOnlyHint: true },
+      inputSchema: z.object({
+        ...paginationSchema,
+        q: z.string().optional().describe("Search by caller name or phone number."),
+        receivedAfter: z
+          .string()
+          .optional()
+          .describe("ISO-8601 datetime. Only calls that started at or after this instant."),
+        receivedBefore: z
+          .string()
+          .optional()
+          .describe("ISO-8601 datetime. Only calls that started at or before this instant."),
+        customerId: z.number().int().positive().optional().describe("Only calls for this customer."),
+        campaignId: z.number().int().positive().optional().describe("Only calls for this campaign."),
+        leadId: z.number().int().positive().optional().describe("Only calls linked to this CRM lead."),
+        outcome: z
+          .enum(["live_conversation", "voicemail", "busy", "unavailable", "machine", "missed"])
+          .optional()
+          .describe("Call outcome. missed means nobody answered."),
+        direction: z.enum(["incoming", "outgoing"]).optional().describe("Call direction."),
+        answered: z.boolean().optional().describe("true for answered calls, false for unanswered calls."),
+        phone: z.string().optional().describe("Partial phone number of the caller or the number called."),
+      }),
+    },
+    async (input) =>
+      client.request({
+        path: "/api/public/crm/calls",
+        query: {
+          ...paginationQuery(input),
+          "receivedAt[after]": input.receivedAfter,
+          "receivedAt[before]": input.receivedBefore,
+          customerId: input.customerId,
+          campaignId: input.campaignId,
+          leadId: input.leadId,
+          outcome: input.outcome,
+          direction: input.direction,
+          answered: input.answered,
+          phone: input.phone,
+        },
+      }),
+  );
+
+  registerJsonTool(
+    server,
+    "get-crm-call",
+    {
+      description:
+        "Fetch one Voys phone call with its transcript, AI summary and linked CRM lead (GET /api/public/crm/calls/{id}). Scope: crm:read.",
+      annotations: { readOnlyHint: true },
+      inputSchema: z.object({
+        id: z.number().int().positive().describe("Call id."),
+      }),
+    },
+    async (input) =>
+      client.request({ path: `/api/public/crm/calls/${encodePathSegment(input.id)}` }),
+  );
 }

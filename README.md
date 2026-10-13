@@ -129,8 +129,8 @@ location = /mcp {
 | **To-dos** | `list-todos`, `create-todo`, `get-todo`, `update-todo`, `delete-todo` |
 | **Sales** | `list-deals`, `create-deal`, `move-deal-stage`, `list-people`, `list-notes`, `list-activities`, `list-pipelines`, `get-default-pipeline` |
 | **Customers** | `list-customers`, `create-customer`, `archive-customer`, `restore-customer`, `list-customer-contacts` |
-| **CRM** | `list-crm-leads`, `approve-crm-lead`, `reject-crm-lead` |
-| **Speed to Lead** | `list-stl-flows`, `list-stl-sms-templates`, `list-stl-leads` |
+| **CRM** | `list-crm-leads`, `approve-crm-lead`, `reject-crm-lead`, `list-crm-calls`, `get-crm-call` (Voys calls with transcript, summary and linked lead; read only, scope `crm:read`) |
+| **Speed to Lead** | `list-stl-flows`, `create-stl-flows-batch`, `list-stl-sms-templates`, `list-stl-leads` |
 | **Business Profiles** | `list-business-profile-locations`, `list-business-profile-reviews`, `approve-business-profile-review-reply`, `dismiss-business-profile-review`, `accept-business-profile-change`, `dismiss-business-profile-change`, `create-business-profile-post`, `get-location-performance`, `list-location-search-keywords` (scopes `business-profiles:read` / `business-profiles:write`, only when the module is on) |
 | **Webhooks** | `list-webhooks`, `create-webhook` (secret returned once) |
 | **Members** | `list-members`, `invite-member`, `change-member-role` |

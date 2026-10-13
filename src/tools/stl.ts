@@ -48,6 +48,48 @@ export function registerStlTools(server: McpServer, client: ZentriaClient): void
 
   registerJsonTool(
     server,
+    "create-stl-flows-batch",
+    {
+      description:
+        "Create Speed to Lead flows for several Elementor connections in one call (POST /api/public/stl/flows/batch). Pass customerIntegrationIds, or campaignId for every Elementor connection of that campaign. Each connection gets its own draft flow with the same name, receiving phone and SMS template; with more than one connection the flow is named \"{name} · {connection name}\". Connections that already have a flow are skipped and returned under skipped. Scope: stl:write.",
+      inputSchema: z
+        .object({
+          name: z.string().min(1),
+          receivingPhone: z.string().min(1),
+          customerIntegrationIds: z
+            .array(z.number().int().positive())
+            .min(1)
+            .max(100)
+            .optional()
+            .describe("Elementor connection ids. Required unless campaignId is given."),
+          campaignId: z
+            .number()
+            .int()
+            .positive()
+            .optional()
+            .describe("Use every Elementor connection of this campaign."),
+          smsTemplateId: z
+            .number()
+            .int()
+            .positive()
+            .optional()
+            .describe("SMS template from the team library. Defaults to the team default."),
+        })
+        .refine(
+          (input) => input.customerIntegrationIds !== undefined || input.campaignId !== undefined,
+          { message: "Pass customerIntegrationIds or campaignId." },
+        ),
+    },
+    async (input) =>
+      client.request({
+        method: "POST",
+        path: "/api/public/stl/flows/batch",
+        body: compactBody(input) ?? {},
+      }),
+  );
+
+  registerJsonTool(
+    server,
     "get-stl-flow",
     {
       description: "Fetch a Speed to Lead flow (GET /api/public/stl/flows/{id}). Scope: stl:read.",
