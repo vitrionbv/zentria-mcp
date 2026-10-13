@@ -39,13 +39,25 @@ export function registerSalesDealTools(server: McpServer, client: ZentriaClient)
     "create-deal",
     {
       description:
-        "Create a sales deal (POST /api/public/sales/deals). pipelineId is required. Scope: sales:write.",
+        "Create a sales deal (POST /api/public/sales/deals). pipelineId and a contact are required: personId or organizationId, or nested person/organization to create (or reuse) them. Scope: sales:write.",
       inputSchema: z.object({
         title: z.string().min(1).describe("Deal title."),
         pipelineId: z.number().int().positive().describe("Pipeline id."),
         value: z.number().optional().describe("Deal value."),
         personId: z.number().int().positive().optional(),
         organizationId: z.number().int().positive().optional(),
+        person: z
+          .object({
+            name: z.string().min(1).max(255),
+            email: z.string().email().optional(),
+            phone: z.string().max(32).optional(),
+          })
+          .optional()
+          .describe("A new person for the deal. An existing person with the same email or phone is reused."),
+        organization: z
+          .object({ name: z.string().min(1).max(255) })
+          .optional()
+          .describe("A new company for the deal. An existing company with the same name is reused."),
         stageId: z.number().int().positive().optional(),
         ownerUserId: z.number().int().positive().optional(),
         expectedCloseDate: z.string().optional().describe("ISO date YYYY-MM-DD."),
@@ -111,13 +123,14 @@ export function registerSalesDealTools(server: McpServer, client: ZentriaClient)
       inputSchema: z.object({
         id: z.number().int().positive().describe("Deal id."),
         stageId: z.number().int().positive().describe("Target stage id."),
+        lostReason: z.string().max(255).optional().describe("Why the deal is lost, when the stage is the lost stage."),
       }),
     },
     async (input) =>
       client.request({
         method: "PATCH",
         path: `/api/public/sales/deals/${encodePathSegment(input.id)}/stage`,
-        body: { stageId: input.stageId },
+        body: compactBody({ stageId: input.stageId, lostReason: input.lostReason }) ?? {},
       }),
   );
 }

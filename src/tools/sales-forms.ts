@@ -14,7 +14,8 @@ export function registerSalesFormTools(server: McpServer, client: ZentriaClient)
     server,
     "list-forms",
     {
-      description: "List sales forms (GET /api/public/sales/forms). Scope: sales:read.",
+      description:
+        "List sales forms (GET /api/public/sales/forms). Needs the manage-forms permission. Scope: sales:read.",
       annotations: { readOnlyHint: true },
       inputSchema: z.object({ ...paginationSchema }),
     },
@@ -33,7 +34,8 @@ export function registerSalesFormTools(server: McpServer, client: ZentriaClient)
       inputSchema: z.object({
         name: z.string().min(1),
         pipelineId: z.number().int().positive(),
-        allowedOrigins: z.array(z.string()).optional(),
+        allowedOrigins: z.array(z.string()).optional().describe("http(s) origins. Wildcards are not allowed."),
+        calEventTypeId: z.string().max(255).optional().describe("Cal.com event type path or URL."),
         canvasHtml: z.string().optional(),
         canvasCss: z.string().optional(),
         canvasJs: z.string().optional(),
@@ -53,7 +55,8 @@ export function registerSalesFormTools(server: McpServer, client: ZentriaClient)
     server,
     "get-form",
     {
-      description: "Fetch a sales form (GET /api/public/sales/forms/{id}). Scope: sales:read.",
+      description:
+        "Fetch a sales form (GET /api/public/sales/forms/{id}). Needs the manage-forms permission. Scope: sales:read.",
       annotations: { readOnlyHint: true },
       inputSchema: z.object({
         id: z.number().int().positive().describe("Form id."),
@@ -72,7 +75,8 @@ export function registerSalesFormTools(server: McpServer, client: ZentriaClient)
         id: z.number().int().positive().describe("Form id."),
         name: z.string().optional(),
         pipelineId: z.number().int().positive().optional(),
-        allowedOrigins: z.array(z.string()).optional(),
+        allowedOrigins: z.array(z.string()).optional().describe("http(s) origins. Wildcards are not allowed."),
+        calEventTypeId: z.string().max(255).optional().describe("Cal.com event type path or URL."),
         canvasHtml: z.string().optional(),
         canvasCss: z.string().optional(),
         canvasJs: z.string().optional(),

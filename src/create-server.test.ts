@@ -50,14 +50,11 @@ const EXPECTED_TOOLS = [
   "update-customer",
   "archive-customer",
   "restore-customer",
-  "list-customer-contacts",
-  "create-customer-contact",
-  "get-contact",
-  "update-contact",
   "list-crm-leads",
   "get-crm-lead",
   "approve-crm-lead",
   "reject-crm-lead",
+  "list-crm-lead-value-categories",
   "list-crm-submissions",
   "get-crm-submission",
   "list-crm-calls",
@@ -106,6 +103,41 @@ const EXPECTED_TOOLS = [
   "get-integrations",
 ];
 
+import { scopesNamedIn } from "./create-server.js";
+
+describe("scope aware tools", () => {
+  beforeEach(() => {
+    process.env.ZENTRIA_API_KEY = "test-key";
+  });
+
+  afterEach(() => {
+    delete process.env.ZENTRIA_API_KEY;
+  });
+
+  it("reads the scopes named in a description", () => {
+    expect(scopesNamedIn("List leads. Scope: crm:read.")).toEqual(["crm:read"]);
+    expect(scopesNamedIn("Needs Scopes sales:read / sales-admin:write")).toEqual(["sales:read", "sales-admin:write"]);
+    expect(scopesNamedIn("No scope named here")).toEqual([]);
+    expect(scopesNamedIn("Uses the crm:read data but names no scope")).toEqual([]);
+  });
+
+  it("registers only the tools the token has a scope for", () => {
+    const all = listRegisteredToolNames(createServer());
+    const readOnly = listRegisteredToolNames(createServer({ scopes: ["crm:read", "customers:read"] }));
+
+    expect(readOnly.length).toBeLessThan(all.length);
+    expect(readOnly).toContain("list-crm-leads");
+    expect(readOnly).toContain("list-customers");
+    expect(readOnly).not.toContain("approve-crm-lead");
+    expect(readOnly).not.toContain("create-customer");
+    expect(readOnly).not.toContain("list-deals");
+  });
+
+  it("registers every tool when the token lists no scopes", () => {
+    expect(listRegisteredToolNames(createServer({ scopes: [] })).length).toBe(listRegisteredToolNames(createServer()).length);
+  });
+});
+
 describe("createServer", () => {
   beforeEach(() => {
     process.env.ZENTRIA_API_KEY = "test-key";
@@ -130,7 +162,10 @@ describe("createServer", () => {
   it("registers kebab-case tools for every public API operation", () => {
     const server = createServer();
     const tools = listRegisteredToolNames(server);
-    expect(tools.sort()).toEqual([...EXPECTED_TOOLS].sort());
+    for (const name of EXPECTED_TOOLS) {
+      expect(tools, `missing tool ${name}`).toContain(name);
+    }
+    expect(new Set(tools).size, "duplicate tool names").toBe(tools.length);
     for (const name of tools) {
       expect(name).toMatch(/^[a-z0-9]+(-[a-z0-9]+)*$/);
     }

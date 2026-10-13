@@ -29,13 +29,18 @@ export function registerStlTools(server: McpServer, client: ZentriaClient): void
     server,
     "create-stl-flow",
     {
-      description: "Create a Speed to Lead flow (POST /api/public/stl/flows). Scope: stl:write.",
+      description:
+        "Create a draft Speed to Lead flow for one Elementor connection (POST /api/public/stl/flows). Uses the team default SMS template unless smsTemplateId is given. A connection that already has a flow is rejected; use create-stl-flows-batch for several connections. Publish it with update-stl-flow (status active). Scope: stl:write.",
       inputSchema: z.object({
         name: z.string().min(1),
-        customerIntegrationId: z.number().int().positive(),
-        receivingPhone: z.string().min(1),
-        status: z.enum(["draft", "active", "inactive"]).optional(),
-        templateJson: z.record(z.string(), z.unknown()).optional(),
+        customerIntegrationId: z.number().int().positive().describe("Elementor connection id."),
+        receivingPhone: z.string().min(1).describe("Phone number that receives the SMS."),
+        smsTemplateId: z
+          .number()
+          .int()
+          .positive()
+          .optional()
+          .describe("SMS template from the team library. Defaults to the team default."),
       }),
     },
     async (input) =>
@@ -106,14 +111,17 @@ export function registerStlTools(server: McpServer, client: ZentriaClient): void
     server,
     "update-stl-flow",
     {
-      description: "Update a Speed to Lead flow (PUT /api/public/stl/flows/{id}). Scope: stl:write.",
+      description:
+        "Update a Speed to Lead flow (PUT /api/public/stl/flows/{id}). Fields you leave out keep their value. A flow only goes active when its Elementor connection has exactly one field tagged as the lead name. Set the SMS text with templateText (plain text with {{Name}}, {{Adres}}, {{Telefoon}}, {{Email}}, {{Omschrijving}} placeholders) or templateJson (Tiptap). applyToCampaignFlows copies phone, status and SMS text to the other flows of the same campaign; the result lists appliedToFlowIds and notActivatedFlowIds. Scope: stl:write.",
       inputSchema: z.object({
         id: z.number().int().positive().describe("Flow id."),
         name: z.string().optional(),
         customerIntegrationId: z.number().int().positive().optional(),
         receivingPhone: z.string().optional(),
         status: z.enum(["draft", "active", "inactive"]).optional(),
-        templateJson: z.record(z.string(), z.unknown()).optional(),
+        templateText: z.string().optional().describe("SMS text as plain text with {{placeholders}}."),
+        templateJson: z.record(z.string(), z.unknown()).optional().describe("SMS text as a Tiptap document."),
+        applyToCampaignFlows: z.boolean().optional().describe("Also copy phone, status and SMS text to the other flows of the campaign."),
       }),
     },
     async (input) => {
@@ -122,6 +130,29 @@ export function registerStlTools(server: McpServer, client: ZentriaClient): void
       return client.request({
         method: "PUT",
         path: `/api/public/stl/flows/${encodePathSegment(id)}`,
+        body: compactBody(body) ?? {},
+      });
+    },
+  );
+
+  registerJsonTool(
+    server,
+    "send-stl-flow-test-sms",
+    {
+      description:
+        "Send a real test SMS with sample data for a flow, through the team's Twilio account (POST /api/public/stl/flows/{flowId}/test-sms). Optionally test an unsaved template with templateJson. Needs the edit-flows permission. Scope: stl:write.",
+      inputSchema: z.object({
+        flowId: z.number().int().positive().describe("Flow id."),
+        to: z.string().min(1).describe("Phone number that receives the test SMS."),
+        templateJson: z.record(z.string(), z.unknown()).optional().describe("Optional unsaved Tiptap template to test."),
+      }),
+    },
+    async (input) => {
+      const { flowId, ...body } = input;
+
+      return client.request({
+        method: "POST",
+        path: `/api/public/stl/flows/${encodePathSegment(flowId)}/test-sms`,
         body: compactBody(body) ?? {},
       });
     },
@@ -163,10 +194,13 @@ export function registerStlTools(server: McpServer, client: ZentriaClient): void
     server,
     "create-stl-sms-template",
     {
-      description: "Create an STL SMS template (POST /api/public/stl/sms-templates). Scope: stl:write.",
+      description:
+        "Create an STL SMS template (POST /api/public/stl/sms-templates). Give templateText (plain text with {{Name}}, {{Adres}}, {{Telefoon}}, {{Email}}, {{Omschrijving}} placeholders; {{Omschrijving|truncate(100)}} shortens) or templateJson (Tiptap). The first template of a team becomes the default. Needs the manage-team-settings permission. Scope: stl:write.",
       inputSchema: z.object({
         name: z.string().min(1),
-        body: z.string().min(1).describe("SMS template body."),
+        templateText: z.string().min(1).optional().describe("SMS text as plain text with {{placeholders}}."),
+        templateJson: z.record(z.string(), z.unknown()).optional().describe("SMS text as a Tiptap document."),
+        isDefault: z.boolean().optional().describe("Make this the team default template."),
       }),
     },
     async (input) =>
@@ -197,11 +231,12 @@ export function registerStlTools(server: McpServer, client: ZentriaClient): void
     "update-stl-sms-template",
     {
       description:
-        "Update an STL SMS template (PUT /api/public/stl/sms-templates/{id}). Scope: stl:write.",
+        "Replace the name and text of an STL SMS template (PUT /api/public/stl/sms-templates/{id}). Send name plus templateText or templateJson. Needs the manage-team-settings permission. Scope: stl:write.",
       inputSchema: z.object({
         id: z.number().int().positive().describe("Template id."),
-        name: z.string().optional(),
-        body: z.string().optional(),
+        name: z.string().min(1),
+        templateText: z.string().min(1).optional().describe("SMS text as plain text with {{placeholders}}."),
+        templateJson: z.record(z.string(), z.unknown()).optional().describe("SMS text as a Tiptap document."),
       }),
     },
     async (input) => {
@@ -213,6 +248,25 @@ export function registerStlTools(server: McpServer, client: ZentriaClient): void
         body: compactBody(body) ?? {},
       });
     },
+  );
+
+  registerJsonTool(
+    server,
+    "set-default-stl-sms-template",
+    {
+      description:
+        "Make an SMS template the team default for new flows (PUT /api/public/stl/sms-templates/{id}/default). Needs the manage-team-settings permission. Scope: stl:write.",
+      annotations: { idempotentHint: true },
+      inputSchema: z.object({
+        id: z.number().int().positive().describe("Template id."),
+      }),
+    },
+    async (input) =>
+      client.request({
+        method: "PUT",
+        path: `/api/public/stl/sms-templates/${encodePathSegment(input.id)}/default`,
+        body: {},
+      }),
   );
 
   registerJsonTool(

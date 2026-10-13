@@ -13,7 +13,7 @@ This server uses the official **public REST API** at `/api/public`. Paths and re
 
 ## Features
 
-- **90 tools** covering discovery, to-dos, sales (people, deals, notes, activities, organizations, pipelines, forms, submissions), customers, CRM, Speed to Lead, Google Business Profiles, webhooks, members, settings, and integrations
+- **309 tools** covering nearly everything the Zentria app does: discovery, to-dos, sales, customers, campaigns and connections, invoices, CRM leads, submissions, calls and lead values, Speed to Lead, Google Business Profiles, webhooks, members, team settings and exports. The hosted connector only lists the tools that fit the scopes of the token
 - Team-bound **Personal Access Token** auth (`Authorization: Bearer`)
 - Automatic rate-limit retry (429 + `Retry-After`)
 - Stdio transport (Cursor, Claude Desktop, Claude Code)
@@ -123,18 +123,23 @@ location = /mcp {
 
 ## Tool groups
 
+309 tools. They cover what you can do in the Zentria app, limited by the rights of the member behind the key and by the scopes of the key. In the hosted connector (HTTP mode) only the tools that fit the scopes of the token are listed, so a read-only connection sees about 110 tools.
+
 | Group | Examples |
 |-------|----------|
 | **Discovery** | `get-me`, `list-teams`, `get-team`, `list-tenants`, `get-tenant` |
 | **To-dos** | `list-todos`, `create-todo`, `get-todo`, `update-todo`, `delete-todo` |
-| **Sales** | `list-deals`, `create-deal`, `move-deal-stage`, `list-people`, `list-notes`, `list-activities`, `list-pipelines`, `get-default-pipeline` |
-| **Customers** | `list-customers`, `create-customer`, `archive-customer`, `restore-customer`, `list-customer-contacts` |
-| **CRM** | `list-crm-leads`, `approve-crm-lead`, `reject-crm-lead`, `list-crm-calls`, `get-crm-call` (Voys calls with transcript, summary and linked lead; read only, scope `crm:read`) |
-| **Speed to Lead** | `list-stl-flows`, `create-stl-flows-batch`, `list-stl-sms-templates`, `list-stl-leads` |
-| **Business Profiles** | `list-business-profile-locations`, `list-business-profile-reviews`, `approve-business-profile-review-reply`, `dismiss-business-profile-review`, `accept-business-profile-change`, `dismiss-business-profile-change`, `create-business-profile-post`, `get-location-performance`, `list-location-search-keywords` (scopes `business-profiles:read` / `business-profiles:write`, only when the module is on) |
-| **Webhooks** | `list-webhooks`, `create-webhook` (secret returned once) |
-| **Members** | `list-members`, `invite-member`, `change-member-role` |
-| **Settings** | `get-settings`, `get-integrations` |
+| **Sales** | `list-deals`, `create-deal`, `move-deal-stage`, `delete-deal`, `list-people`, `list-notes`, `create-deal-note`, `list-activities`, `complete-activity`, `list-pipelines`, `create-pipeline`, `create-pipeline-stage`, `list-forms`, `publish-form`, `get-sales-settings` (scopes `sales:read`, `sales:write`, `sales:delete`, `sales-admin:write`) |
+| **Customers** | `list-customers`, `create-customer`, `update-customer`, `delete-customer`, `archive-customer`, `restore-customer`, `list-customer-labels`, `merge-customers`, `invite-customer-portal-user`, `get-customer-mollie`, `create-customer-mandate-checkout` |
+| **Campaigns and connections** | `list-campaigns`, `create-campaign`, `split-campaign`, `set-campaign-lead-value-categories`, `create-elementor-connection`, `create-mailbox-connection`, `set-campaign-voys`, `list-crm-voys-connections` (passwords and API keys are write-only) |
+| **Invoices** | `list-invoices`, `get-invoice`, `mark-invoice-ready`, `cancel-invoice`, `collect-invoice`, `pause-invoice-reminders` (scopes `invoices:read`, `invoices:write`) |
+| **CRM leads** | `list-crm-leads` (filters on review status, date, customer, campaign, source, lead value category, invoiced and extra check), `get-crm-lead` (lead value in cents with category label, billing period, invoice and AI summary), `approve-crm-lead`, `reject-crm-lead`, `set-crm-lead-value`, `confirm-crm-lead-rejection`, `delete-crm-lead`, `get-crm-workbench`, `list-crm-callbacks` |
+| **CRM submissions and calls** | `list-crm-submissions`, `mark-crm-submission-as-real`, `mark-crm-submission-as-spam`, `retry-crm-submission-processing`, `list-crm-calls`, `get-crm-call` |
+| **Lead values and rules** | `list-crm-lead-value-categories`, `create-crm-lead-value-category`, `get-crm-lead-value-settings`, `update-crm-lead-value-settings`, `backfill-crm-lead-values`, `list-crm-learning-rules`, `list-crm-ai-rule-proposals`, `get-crm-dashboard`, `get-crm-customer-report` |
+| **Speed to Lead** | `list-stl-flows`, `create-stl-flows-batch`, `list-stl-sms-templates`, `list-stl-leads`, `send-stl-flow-test-sms` |
+| **Business Profiles** | `list-business-profile-locations`, `update-business-profile-location`, `list-business-profile-reviews`, `create-business-profile-review-reply`, `create-business-profile-post`, `create-business-profile-post-schedule`, `list-business-profile-photos`, `list-business-profile-accounts`, `create-business-profile-reply-profile` (scopes `business-profiles:read`, `business-profiles:write`, `business-profiles-admin:write`) |
+| **Webhooks** | `list-webhooks`, `create-webhook` (secret returned once), `get-webhook-options` |
+| **Members and team** | `list-members`, `invite-member`, `change-member-role`, `remove-member`, `list-invitations`, `resend-invitation`, `cancel-invitation`, `list-roles`, `update-team`, `get-settings`, `update-team-setting`, `list-exports`, `start-export`, `delete-export`, `get-integrations` |
 
 ## Development
 

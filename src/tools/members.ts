@@ -43,7 +43,8 @@ export function registerMemberTools(server: McpServer, client: ZentriaClient): v
     server,
     "invite-member",
     {
-      description: "Invite a member by email (POST /api/public/members). Scope: members:write.",
+      description:
+        "Invite a member by email (POST /api/public/members). An existing account gets a pending invitation by mail (see list-invitations); a new address gets an account that is added to the team straight away. Use list-roles for the role names. Scope: members:write.",
       inputSchema: z.object({
         email: z.string().email().describe("Invitee email."),
         role: z.string().min(1).describe("Team role name."),
@@ -82,7 +83,7 @@ export function registerSettingsTools(server: McpServer, client: ZentriaClient):
     "get-settings",
     {
       description:
-        "Fetch non-secret team settings (GET /api/public/settings). Scope: settings:read.",
+        "Fetch the team settings (GET /api/public/settings): timezone, default phone country and, with the manage-team-settings permission, a settings list with key, label, type, options and value for every setting of the settings page (Twilio for Speed to Lead, phone numbers, CRM, invoicing). Secrets are never returned, only hasValue. Change one with update-team-setting. Scope: settings:read.",
       annotations: { readOnlyHint: true },
       inputSchema: z.object({}),
     },

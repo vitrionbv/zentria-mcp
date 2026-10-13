@@ -14,15 +14,29 @@ export function registerSalesNoteTools(server: McpServer, client: ZentriaClient)
     server,
     "list-notes",
     {
-      description: "List sales notes (GET /api/public/sales/notes). Scope: sales:read.",
+      description:
+        "List sales notes (GET /api/public/sales/notes). Optional dealId, personId or organizationId filter. Scope: sales:read.",
       annotations: { readOnlyHint: true },
-      inputSchema: z.object({ ...paginationSchema }),
-    },
-    async (input) =>
-      client.request({
-        path: "/api/public/sales/notes",
-        query: paginationQuery(input),
+      inputSchema: z.object({
+        ...paginationSchema,
+        dealId: z.number().int().positive().optional().describe("Only notes on this deal."),
+        personId: z.number().int().positive().optional().describe("Only notes on this person."),
+        organizationId: z.number().int().positive().optional().describe("Only notes on this organization."),
       }),
+    },
+    async (input) => {
+      const { dealId, personId, organizationId, ...pagination } = input;
+
+      return client.request({
+        path: "/api/public/sales/notes",
+        query: {
+          ...paginationQuery(pagination),
+          ...(dealId !== undefined ? { dealId } : {}),
+          ...(personId !== undefined ? { personId } : {}),
+          ...(organizationId !== undefined ? { organizationId } : {}),
+        },
+      });
+    },
   );
 
   registerJsonTool(
@@ -86,7 +100,8 @@ export function registerSalesNoteTools(server: McpServer, client: ZentriaClient)
     server,
     "delete-note",
     {
-      description: "Delete a sales note (DELETE /api/public/sales/notes/{id}). Scope: sales:write.",
+      description:
+        "Delete a sales note (DELETE /api/public/sales/notes/{id}). Scope: sales:delete.",
       annotations: { destructiveHint: true },
       inputSchema: z.object({
         id: z.number().int().positive().describe("Note id."),

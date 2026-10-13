@@ -6,6 +6,7 @@ import {
   encodePathSegment,
   paginationQuery,
   paginationSchema,
+  registerApiTool,
   registerJsonTool,
 } from "./_shared.js";
 
@@ -418,4 +419,198 @@ export function registerBusinessProfileTools(server: McpServer, client: ZentriaC
         query: query(input, { month: input.month }),
       }),
   );
+
+  // ---- Single items ----
+  registerApiTool(server, client, {
+    name: "get-business-profile-review",
+    description: `Get a Google review (GET ${BASE}/reviews/{id}). Scope: business-profiles:read.`,
+    path: `${BASE}/reviews/{id}`,
+    input: { id: z.number().int().positive().describe("Review id.") },
+  });
+
+  registerApiTool(server, client, {
+    name: "get-business-profile-review-reply",
+    description: `Get a reply draft or sent reply (GET ${BASE}/review-replies/{id}). Scope: business-profiles:read.`,
+    path: `${BASE}/review-replies/{id}`,
+    input: { id: z.number().int().positive().describe("Reply id.") },
+  });
+
+  registerApiTool(server, client, {
+    name: "get-business-profile-change",
+    description: `Get a detected location change with the values of the standard profile and of Google per field (GET ${BASE}/changes/{id}). Scope: business-profiles:read.`,
+    path: `${BASE}/changes/{id}`,
+    input: { id: z.number().int().positive().describe("Change id.") },
+  });
+
+  registerApiTool(server, client, {
+    name: "get-business-profile-post",
+    description: `Get a post (GET ${BASE}/posts/{id}). Scope: business-profiles:read.`,
+    path: `${BASE}/posts/{id}`,
+    input: { id: z.number().int().positive().describe("Post id.") },
+  });
+
+  // ---- Reviews and replies ----
+  registerApiTool(server, client, {
+    name: "generate-business-profile-review-reply-draft",
+    description: `Let AI write a new reply draft for a review (POST ${BASE}/reviews/{id}/draft). Older open drafts are superseded; the draft waits for approval. Answers 422 when the review already has a reply. Scope: business-profiles:write.`,
+    method: "POST",
+    path: `${BASE}/reviews/{id}/draft`,
+    input: {
+      id: z.number().int().positive().describe("Review id."),
+      instruction: z.string().max(500).optional().describe("Optional instruction, for example: make it shorter."),
+    },
+  });
+
+  registerApiTool(server, client, {
+    name: "create-business-profile-review-reply",
+    description: `Write a reply to a review yourself (POST ${BASE}/reviews/{id}/replies). send true posts it to Google right away, false saves a draft that waits for approval. Answers 422 when the review already has a reply or the location is not verified. Scope: business-profiles:write.`,
+    method: "POST",
+    path: `${BASE}/reviews/{id}/replies`,
+    input: {
+      id: z.number().int().positive().describe("Review id."),
+      body: z.string().min(1).max(4096).describe("Reply text."),
+      send: z.boolean().optional().describe("true sends it to Google now. Default false (draft)."),
+    },
+  });
+
+  registerApiTool(server, client, {
+    name: "update-business-profile-review-reply",
+    description: `Change the text of a reply draft; it goes back to waiting for approval (PATCH ${BASE}/review-replies/{id}). Scope: business-profiles:write.`,
+    method: "PATCH",
+    path: `${BASE}/review-replies/{id}`,
+    input: {
+      id: z.number().int().positive().describe("Reply id."),
+      body: z.string().min(1).max(4096).describe("New reply text."),
+    },
+  });
+
+  registerApiTool(server, client, {
+    name: "delete-business-profile-review-reply",
+    description: `Delete the reply that Zentria posted on Google (DELETE ${BASE}/reviews/{id}/reply); a reply written on Google itself cannot be deleted. Answers the review. Scope: business-profiles:write.`,
+    method: "DELETE",
+    path: `${BASE}/reviews/{id}/reply`,
+    input: { id: z.number().int().positive().describe("Review id.") },
+    destructive: true,
+  });
+
+  registerApiTool(server, client, {
+    name: "bulk-approve-business-profile-review-replies",
+    description: `Approve many reply drafts and queue them for sending (POST ${BASE}/review-replies/bulk-approve). Give ids (up to 100), or approveAll true with locationId for all pending drafts of that location (at most 200). Drafts of unverified locations and of reviews that already have a reply are skipped. Answers {"queued": n}. Scope: business-profiles:write.`,
+    method: "POST",
+    path: `${BASE}/review-replies/bulk-approve`,
+    input: {
+      ids: z.array(z.number().int().positive()).max(100).optional().describe("Reply ids."),
+      approveAll: z.boolean().optional().describe("Approve all pending drafts of locationId."),
+      locationId: z.number().int().positive().optional(),
+    },
+  });
+
+  registerApiTool(server, client, {
+    name: "generate-business-profile-review-reply-drafts",
+    description: `Queue AI reply drafts for all unanswered reviews without an open draft, at most 200, optionally of one location (POST ${BASE}/reviews/generate-drafts). confirmCount has to equal the number of affected reviews; otherwise the call answers 422 with the real number so you can confirm it. The drafts wait for approval. Scope: business-profiles:write.`,
+    method: "POST",
+    path: `${BASE}/reviews/generate-drafts`,
+    input: {
+      confirmCount: z.number().int().min(0).describe("Number of unanswered reviews without a draft that you expect."),
+      locationId: z.number().int().positive().optional(),
+    },
+  });
+
+  // ---- Changes ----
+  registerApiTool(server, client, {
+    name: "decide-business-profile-changes",
+    description: `Decide up to 200 location changes at once (POST ${BASE}/changes/bulk): accept (Google is right), reject (our values are restored at Google) or dismiss (handled elsewhere). Changes that were already handled are skipped. Answers {"processed": n, "skipped": n}. Scope: business-profiles:write.`,
+    method: "POST",
+    path: `${BASE}/changes/bulk`,
+    input: {
+      ids: z.array(z.number().int().positive()).min(1).max(200).describe("Change ids."),
+      decision: z.enum(["accept", "reject", "dismiss"]),
+    },
+  });
+
+  registerApiTool(server, client, {
+    name: "reject-all-business-profile-changes",
+    description: `Reject every open change of one Google login: our values are restored at Google (POST ${BASE}/changes/reject-all). Answers {"processed": n, "skipped": n}. Scope: business-profiles:write.`,
+    method: "POST",
+    path: `${BASE}/changes/reject-all`,
+    input: { googleAccountId: z.number().int().positive().describe("Id from list-business-profile-accounts.") },
+    destructive: true,
+  });
+
+  // ---- Posts ----
+  const postFields = {
+    topicType: z.enum(["STANDARD", "EVENT", "OFFER"]),
+    summary: z.string().min(1).max(1500),
+    mode: z
+      .enum(["draft", "schedule", "publish_now"])
+      .optional()
+      .describe("draft (default), schedule (needs scheduledFor) or publish_now."),
+    scheduledFor: z.string().optional().describe("Required for schedule: future time, Europe/Amsterdam."),
+    title: z.string().max(58).optional().describe("Required for EVENT and OFFER."),
+    language: z.enum(["nl", "en"]).optional(),
+    ctaType: z.enum(["BOOK", "ORDER", "SHOP", "LEARN_MORE", "SIGN_UP", "CALL"]).optional(),
+    ctaUrl: z.string().url().optional().describe("Required for every ctaType except CALL."),
+    eventStart: z.string().optional().describe("Required for EVENT and OFFER."),
+    eventEnd: z.string().optional().describe("Required for EVENT and OFFER."),
+    offer: z
+      .object({
+        couponCode: z.string().max(58).optional(),
+        redeemUrl: z.string().url().optional(),
+        terms: z.string().max(5000).optional(),
+      })
+      .optional()
+      .describe("Offer details for OFFER posts."),
+    mediaPath: z.string().optional().describe("Path from upload-business-profile-post-picture."),
+    source: z.enum(["manual", "ai"]).optional().describe("ai records the model and cost of the last generated draft with the same text."),
+  };
+
+  registerApiTool(server, client, {
+    name: "update-business-profile-post",
+    description: `Replace the content of a post that can still be edited: draft, waiting for approval, scheduled, failed or expired (PUT ${BASE}/posts/{id}). Send the full post like in create-business-profile-post (without locationIds). mode decides what happens next. Scope: business-profiles:write.`,
+    method: "PUT",
+    path: `${BASE}/posts/{id}`,
+    input: { id: z.number().int().positive().describe("Post id."), ...postFields },
+  });
+
+  registerApiTool(server, client, {
+    name: "approve-business-profile-post",
+    description: `Approve a draft or a post that waits for approval so it is published at its planned time (POST ${BASE}/posts/{id}/approve). Answers 422 when it has no text or no future time. Scope: business-profiles:write.`,
+    method: "POST",
+    path: `${BASE}/posts/{id}/approve`,
+    input: { id: z.number().int().positive().describe("Post id.") },
+  });
+
+  registerApiTool(server, client, {
+    name: "publish-business-profile-post",
+    description: `Publish a post now (POST ${BASE}/posts/{id}/publish). Scope: business-profiles:write.`,
+    method: "POST",
+    path: `${BASE}/posts/{id}/publish`,
+    input: { id: z.number().int().positive().describe("Post id.") },
+  });
+
+  registerApiTool(server, client, {
+    name: "generate-business-profile-post-text",
+    description: `Let AI write a post text for a location without saving anything (POST ${BASE}/posts/generate). Use the summary in create-business-profile-post or update-business-profile-post with source ai. Scope: business-profiles:write.`,
+    method: "POST",
+    path: `${BASE}/posts/generate`,
+    input: {
+      locationId: z.number().int().positive().describe("Location id."),
+      prompt: z.string().max(2000).optional().describe("What the post is about."),
+      tone: z.enum(["vriendelijk", "zakelijk", "informeel", "enthousiast"]).optional(),
+      language: z.enum(["nl", "en"]).optional(),
+      length: z.number().int().min(50).max(1500).optional().describe("Target length in characters."),
+      topicType: z.enum(["STANDARD", "EVENT", "OFFER"]).optional(),
+      ctaType: z.enum(["BOOK", "ORDER", "SHOP", "LEARN_MORE", "SIGN_UP", "CALL"]).optional(),
+      currentSummary: z.string().max(1500).optional().describe("An existing text to improve."),
+      instruction: z.string().max(1000).optional().describe("What to change in the current text."),
+    },
+  });
+
+  registerApiTool(server, client, {
+    name: "upload-business-profile-post-picture",
+    description: `Upload a picture for a post from base64 content (POST ${BASE}/posts/media). JPG or PNG, up to 10 MB, at least 250 pixels on the short edge. Answers {path, url}: use path as mediaPath when creating or updating a post. Uploading a file with multipart is only possible in the app. Scope: business-profiles:write.`,
+    method: "POST",
+    path: `${BASE}/posts/media`,
+    input: { contentBase64: z.string().describe("Picture content, base64 encoded.") },
+  });
 }

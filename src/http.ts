@@ -122,6 +122,7 @@ export function createHttpHandler(options: HttpServerOptions): (request: Request
   const mcp = createMcpHandler(
     (ctx) =>
       createServer({
+        scopes: ctx.authInfo?.scopes,
         client: new ZentriaClient({
           apiKey: ctx.authInfo?.token ?? "",
           baseUrl,

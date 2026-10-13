@@ -103,7 +103,7 @@ describe("createHttpHandler", () => {
     const meCalls = fetchImpl.mock.calls.filter(([url]) => String(url).endsWith("/api/public/me"));
     expect(meCalls).toHaveLength(1);
 
-    const todoCall = fetchImpl.mock.calls.find(([url]) => String(url).includes("/api/public/teams/3/todos"));
+    const todoCall = fetchImpl.mock.calls.find(([url]) => String(url).includes("/api/public/todos"));
     expect(new Headers(todoCall?.[1]?.headers).get("Authorization")).toBe("Bearer good-token");
   });
 

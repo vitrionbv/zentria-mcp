@@ -14,15 +14,31 @@ export function registerSalesActivityTools(server: McpServer, client: ZentriaCli
     server,
     "list-activities",
     {
-      description: "List sales activities (GET /api/public/sales/activities). Scope: sales:read.",
+      description:
+        "List sales activities (GET /api/public/sales/activities). Optional dealId, personId, assigneeUserId and status filters. Scope: sales:read.",
       annotations: { readOnlyHint: true },
-      inputSchema: z.object({ ...paginationSchema }),
-    },
-    async (input) =>
-      client.request({
-        path: "/api/public/sales/activities",
-        query: paginationQuery(input),
+      inputSchema: z.object({
+        ...paginationSchema,
+        dealId: z.number().int().positive().optional().describe("Only activities on this deal."),
+        personId: z.number().int().positive().optional().describe("Only activities for this person."),
+        assigneeUserId: z.number().int().positive().optional().describe("Only activities of this assignee."),
+        status: z.enum(["open", "done", "cancelled"]).optional(),
       }),
+    },
+    async (input) => {
+      const { dealId, personId, assigneeUserId, status, ...pagination } = input;
+
+      return client.request({
+        path: "/api/public/sales/activities",
+        query: {
+          ...paginationQuery(pagination),
+          ...(dealId !== undefined ? { dealId } : {}),
+          ...(personId !== undefined ? { personId } : {}),
+          ...(assigneeUserId !== undefined ? { assigneeUserId } : {}),
+          ...(status !== undefined ? { status } : {}),
+        },
+      });
+    },
   );
 
   registerJsonTool(

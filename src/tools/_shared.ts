@@ -124,3 +124,87 @@ export function paginationQuery(input: {
 
   return query;
 }
+
+type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+
+export interface ApiToolSpec<T extends z.ZodRawShape> {
+  /** kebab-case tool name. */
+  name: string;
+  /** What it does, which endpoint it calls and the scope it needs (see the other tools). */
+  description: string;
+  method?: HttpMethod;
+  /** API path. `{key}` placeholders are filled from the input and URL-encoded. */
+  path: string;
+  /** Zod raw shape of the tool input. */
+  input: T;
+  /**
+   * Input keys sent as query string. Without this list every key that is not in the path
+   * goes to the query string for GET and to the JSON body for other methods.
+   */
+  query?: Array<keyof T & string>;
+  /** Map an input key to a different API field or query name, for example `{ firstSeenAfter: "firstSeenAt[after]" }`. */
+  rename?: Partial<Record<keyof T & string, string>>;
+  /** Defaults to true for GET. */
+  readOnly?: boolean;
+  /** Mark tools that delete or irreversibly change data. */
+  destructive?: boolean;
+}
+
+/**
+ * Register a tool that maps its input onto one public API call. Use this for plain
+ * list, get, create, update, delete and action endpoints.
+ */
+export function registerApiTool<T extends z.ZodRawShape>(
+  server: McpServer,
+  client: { request(options: { method?: HttpMethod; path: string; query?: Record<string, string | number | boolean | undefined | null>; body?: unknown }): Promise<unknown> },
+  spec: ApiToolSpec<T>,
+): void {
+  const method = spec.method ?? "GET";
+  const pathKeys = new Set(Array.from(spec.path.matchAll(/\{(\w+)\}/g), (match) => match[1]));
+  const queryKeys = spec.query ? new Set<string>(spec.query) : null;
+
+  registerJsonTool(
+    server,
+    spec.name,
+    {
+      description: spec.description,
+      annotations: {
+        readOnlyHint: spec.readOnly ?? method === "GET",
+        ...(spec.destructive ? { destructiveHint: true } : {}),
+      },
+      inputSchema: z.object(spec.input),
+    },
+    async (input: Record<string, unknown>) => {
+      const query: Record<string, string | number | boolean | undefined | null> = {};
+      const body: Record<string, unknown> = {};
+      let path = spec.path;
+
+      for (const [key, value] of Object.entries(input)) {
+        if (pathKeys.has(key)) {
+          path = path.replace(`{${key}}`, encodePathSegment(value as string | number));
+          continue;
+        }
+
+        if (value === undefined) {
+          continue;
+        }
+
+        const target = (spec.rename as Record<string, string> | undefined)?.[key] ?? key;
+        const toQuery = queryKeys ? queryKeys.has(key) : method === "GET";
+
+        if (toQuery) {
+          query[target] = value as string | number | boolean;
+        } else {
+          body[target] = value;
+        }
+      }
+
+      return client.request({
+        method,
+        path,
+        query: Object.keys(query).length > 0 ? query : undefined,
+        body: method === "GET" ? undefined : body,
+      });
+    },
+  );
+}

@@ -27,15 +27,30 @@ export function registerWebhookTools(server: McpServer, client: ZentriaClient): 
 
   registerJsonTool(
     server,
+    "get-webhook-options",
+    {
+      description:
+        "List the events a webhook can listen to (only modules that are on) and the sales forms it can be limited to (GET /api/public/webhook-options). Use before create-webhook. Needs the manage-webhooks permission. Scope: webhooks:read.",
+      annotations: { readOnlyHint: true },
+      inputSchema: z.object({}),
+    },
+    async () => client.request({ path: "/api/public/webhook-options" }),
+  );
+
+  registerJsonTool(
+    server,
     "create-webhook",
     {
       description:
         "Create a webhook endpoint. Signing secret returned once (POST /api/public/webhooks). Scope: webhooks:write.",
       inputSchema: z.object({
         url: z.string().url().describe("HTTPS callback URL."),
-        events: z.array(z.string()).min(1).describe("Event names, e.g. sales.deal.updated."),
+        events: z.array(z.string()).min(1).describe("Event names from get-webhook-options, or [\"*\"] for every event."),
         description: z.string().optional(),
-        filters: z.record(z.string(), z.unknown()).optional(),
+        filters: z
+          .object({ form_ids: z.array(z.number().int().positive()).optional() })
+          .optional()
+          .describe("Limit to sales forms: { form_ids: [1, 2] }."),
         source: z.string().optional().describe("Source label (default api)."),
         isActive: z.boolean().optional(),
       }),
@@ -72,7 +87,11 @@ export function registerWebhookTools(server: McpServer, client: ZentriaClient): 
         url: z.string().url().optional(),
         events: z.array(z.string()).optional(),
         description: z.string().nullable().optional(),
-        filters: z.record(z.string(), z.unknown()).nullable().optional(),
+        filters: z
+          .object({ form_ids: z.array(z.number().int().positive()).optional() })
+          .nullable()
+          .optional()
+          .describe("Limit to sales forms: { form_ids: [1, 2] }; null removes the limit."),
         isActive: z.boolean().optional(),
       }),
     },
