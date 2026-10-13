@@ -22,6 +22,8 @@ export interface ZentriaClientOptions {
   apiKey?: string;
   baseUrl?: string;
   fetchImpl?: typeof fetch;
+  /** A `GET /api/public/me` response already fetched for this key (HTTP mode verifies tokens with it). */
+  me?: ZentriaMeResponse;
 }
 
 export class ZentriaClient {
@@ -43,6 +45,7 @@ export class ZentriaClient {
       options.baseUrl ?? process.env.ZENTRIA_BASE_URL ?? DEFAULT_BASE_URL,
     );
     this.fetchImpl = options.fetchImpl ?? fetch;
+    this.meCache = options.me ?? null;
   }
 
   async request(options: ZentriaRequestOptions): Promise<unknown> {

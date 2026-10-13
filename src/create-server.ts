@@ -21,13 +21,18 @@ import { registerWebhookTools } from "./tools/webhooks.js";
 import { PACKAGE_NAME, PACKAGE_VERSION } from "./version.js";
 import { ZentriaClient } from "./zentria/client.js";
 
-export function createServer(): McpServer {
+export interface CreateServerOptions {
+  /** API client to use. Defaults to one built from `ZENTRIA_API_KEY` (stdio mode). */
+  client?: ZentriaClient;
+}
+
+export function createServer(options: CreateServerOptions = {}): McpServer {
   const server = new McpServer({
     name: PACKAGE_NAME,
     version: PACKAGE_VERSION,
   });
 
-  const client = new ZentriaClient();
+  const client = options.client ?? new ZentriaClient();
 
   registerDiscoveryTools(server, client);
   registerTodoTools(server, client);

@@ -17,6 +17,7 @@ This server uses the official **public REST API** at `/api/public`. Paths and re
 - Team-bound **Personal Access Token** auth (`Authorization: Bearer`)
 - Automatic rate-limit retry (429 + `Retry-After`)
 - Stdio transport (Cursor, Claude Desktop, Claude Code)
+- Hosted **Streamable HTTP** mode with OAuth, used for the Claude custom connector at `https://app.zentria.nl/mcp`
 - Logs only to stderr (stdio-safe)
 
 ## Requirements
@@ -72,6 +73,45 @@ claude mcp add zentria -- npx -y @vitrion/zentria-mcp
 ```
 
 Set `ZENTRIA_API_KEY` in your shell environment or MCP host config.
+
+## Claude custom connector (hosted)
+
+Zentria hosts this server at `https://app.zentria.nl/mcp`. In Claude (web, Desktop, mobile) choose **Settings → Connectors → Add custom connector**, enter that URL and sign in with your Zentria account. On the consent screen you pick the team and the scopes. No API key is needed.
+
+### Running the HTTP mode
+
+```bash
+ZENTRIA_MCP_TRANSPORT=http node dist/index.js
+# or
+node dist/index.js --http
+```
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `ZENTRIA_BASE_URL` | `https://app.zentria.nl` | Zentria origin the tools call |
+| `ZENTRIA_MCP_RESOURCE_URL` | `<ZENTRIA_BASE_URL>/mcp` | Public MCP URL, exactly as entered in Claude. Its path is the route served |
+| `ZENTRIA_MCP_HOST` | `127.0.0.1` | Listen address |
+| `ZENTRIA_MCP_PORT` | `3333` (or `PORT`) | Listen port |
+
+How it works:
+
+- The server is a pure OAuth **resource server**. Zentria (Laravel Passport) is the authorization server and publishes `/.well-known/oauth-protected-resource/mcp`, `/.well-known/oauth-authorization-server` and dynamic client registration at `/oauth/register`.
+- Requests without a valid bearer token get `401` with `WWW-Authenticate: Bearer resource_metadata="…"`, which starts the client's sign-in.
+- Tokens are verified with `GET /api/public/me` (cached for 30 seconds) and forwarded unchanged to the public API. Team API keys work as bearer tokens too.
+- Each request runs on a fresh stateless server instance. `GET /healthz` answers `{"ok":true}`.
+
+Run it behind a TLS proxy that forwards the MCP path unchanged, for example nginx:
+
+```nginx
+location = /mcp {
+    proxy_pass http://127.0.0.1:3333;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_buffering off;
+    proxy_read_timeout 300s;
+}
+```
 
 ## For AI agents
 
