@@ -11,7 +11,7 @@ const categoryKey = z
   );
 
 const customerRange = z
-  .enum(["today", "month", "7", "14", "30", "60", "90", "custom"])
+  .enum(["today", "month", "previous_month", "7", "14", "30", "60", "90", "custom"])
   .optional()
   .describe("Period. Default month (start of this month until now). Use custom with from and to.");
 
