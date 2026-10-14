@@ -164,6 +164,10 @@ export function registerCrmSettingsTools(server: McpServer, client: ZentriaClien
         .describe("Sort order of the summaries. Default priority."),
       search: z.string().optional().describe("Search by customer name."),
       label: z.string().optional().describe("Only customers with this label."),
+      service: z
+        .enum(["website", "seo", "business_profile", "phone_tracking"])
+        .optional()
+        .describe("Only campaigns with this service, and customers with at least one such campaign."),
     },
   });
 

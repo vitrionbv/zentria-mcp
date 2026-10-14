@@ -29,6 +29,26 @@ const categoryAssignment = z.object({
     .describe("Leads that match this text do not count for the category. Cannot be combined with whitelistText."),
 });
 
+const services = z
+  .object({
+    website: z.boolean().optional().describe("Website: unlocks Elementor forms."),
+    seo: z.boolean().optional().describe("SEO."),
+    businessProfile: z.boolean().optional().describe("Business Profile: unlocks linking a listing to the campaign."),
+    phoneTracking: z
+      .boolean()
+      .optional()
+      .describe("Phone tracking: unlocks Voys. On clears missingPhoneSharePct, off clears the phone subscription."),
+  })
+  .describe("Services the campaign takes. Only the services you pass change. Turning one off is refused while it still has connections.");
+
+const phoneSubscription = z
+  .object({
+    amountCents: z.number().int().min(0).nullable().optional().describe("Monthly amount of the phone subscription in euro cents. Separate from the campaign monthly amount, not part of the goal."),
+    startsOn: z.string().nullable().optional().describe("Start date, YYYY-MM-DD."),
+    endsOn: z.string().nullable().optional().describe("End date, YYYY-MM-DD, on or after startsOn."),
+  })
+  .describe("Phone subscription, only with the phoneTracking service.");
+
 const splitGroup = z.object({
   name: z.string().min(1).max(255).describe("Name of the campaign. Must be unique within the customer."),
   keepsSource: z.boolean().describe("True for the one group that stays the original campaign."),
@@ -44,7 +64,7 @@ export function registerCampaignTools(server: McpServer, client: ZentriaClient):
   registerApiTool(server, client, {
     name: "list-campaigns",
     description:
-      "List campaigns of the team with customer, monthly amount, lead count, archive state, lead value categories and connection counts (GET /api/public/campaigns). Archived campaigns are hidden unless status is archived or all. Scope: campaigns:read.",
+      "List campaigns of the team with customer, monthly amount, services, phone subscription, lead count, archive state, lead value categories and connection counts (GET /api/public/campaigns). Archived campaigns are hidden unless status is archived or all. Scope: campaigns:read.",
     path: "/api/public/campaigns",
     input: {
       q: paginationSchema.q,
@@ -52,6 +72,10 @@ export function registerCampaignTools(server: McpServer, client: ZentriaClient):
       itemsPerPage: paginationSchema.itemsPerPage,
       customerId: z.number().int().positive().optional().describe("Only campaigns of this customer."),
       status: z.enum(["active", "archived", "all"]).optional().describe("Default active."),
+      services: z
+        .string()
+        .optional()
+        .describe("Comma separated services the campaign must all take: website, seo, business_profile, phone_tracking."),
       splitCandidates: z
         .boolean()
         .optional()
@@ -85,14 +109,16 @@ export function registerCampaignTools(server: McpServer, client: ZentriaClient):
         .min(1)
         .max(99)
         .optional()
-        .describe("Share of calls we cannot measure because there is no Voys number, 1 to 99. Lowers the monthly target."),
+        .describe("Share of calls we cannot measure because there is no phone tracking, 1 to 99. Lowers the monthly target."),
+      services: services.optional(),
+      phoneSubscription: phoneSubscription.optional(),
     },
   });
 
   registerApiTool(server, client, {
     name: "update-campaign",
     description:
-      "Update a campaign: name, monthly amount in euro cents (null clears it), missing phone share and optionally the lead value categories it accepts (PUT /api/public/campaigns/{id}). Fields you leave out stay as they are. allowedLeadValueCategories replaces the whole set. Scope: campaigns:write.",
+      "Update a campaign: name, monthly amount in euro cents (null clears it), missing phone share, services, phone subscription and optionally the lead value categories it accepts (PUT /api/public/campaigns/{id}). Fields you leave out stay as they are. allowedLeadValueCategories replaces the whole set. Scope: campaigns:write.",
     method: "PUT",
     path: "/api/public/campaigns/{id}",
     input: {
@@ -100,6 +126,8 @@ export function registerCampaignTools(server: McpServer, client: ZentriaClient):
       name: z.string().min(1).max(255).optional(),
       monthlyAmountCents: z.number().int().min(0).nullable().optional(),
       missingPhoneSharePct: z.number().int().min(1).max(99).nullable().optional(),
+      services: services.optional(),
+      phoneSubscription: phoneSubscription.optional(),
       allowedLeadValueCategories: z.array(categoryAssignment).optional(),
     },
   });
