@@ -123,7 +123,7 @@ location = /mcp {
 
 ## Tool groups
 
-309 tools. They cover what you can do in the Zentria app, limited by the rights of the member behind the key and by the scopes of the key. In the hosted connector (HTTP mode) only the tools that fit the scopes of the token are listed, so a read-only connection sees about 110 tools.
+338 tools. They cover what you can do in the Zentria app, limited by the rights of the member behind the key and by the scopes of the key. In the hosted connector (HTTP mode) only the tools that fit the scopes of the token are listed, so a read-only connection sees about 110 tools.
 
 | Group | Examples |
 |-------|----------|
@@ -138,6 +138,7 @@ location = /mcp {
 | **Lead values and rules** | `list-crm-lead-value-categories`, `create-crm-lead-value-category`, `get-crm-lead-value-settings`, `update-crm-lead-value-settings`, `backfill-crm-lead-values`, `list-crm-learning-rules`, `list-crm-ai-rule-proposals`, `get-crm-dashboard`, `get-crm-customer-report` |
 | **Speed to Lead** | `list-stl-flows`, `create-stl-flows-batch`, `list-stl-sms-templates`, `list-stl-leads`, `send-stl-flow-test-sms` |
 | **Business Profiles** | `list-business-profile-locations`, `update-business-profile-location`, `list-business-profile-reviews`, `create-business-profile-review-reply`, `create-business-profile-post`, `create-business-profile-post-schedule`, `list-business-profile-photos`, `list-business-profile-accounts`, `create-business-profile-reply-profile` (scopes `business-profiles:read`, `business-profiles:write`, `business-profiles-admin:write`) |
+| **CommuniQate (WhatsApp)** | `communiqate-get-connection`, `communiqate-list-channels`, `communiqate-list-templates`, `communiqate-create-template`, `communiqate-search-contacts`, `communiqate-list-conversations`, `communiqate-list-messages`, `communiqate-start-conversation`, `communiqate-send-message`, `communiqate-send-template`, `communiqate-upload-file` (only when the team connected CommuniQate in Zentria; scopes `communiqate:read`, `communiqate:write`, `communiqate-admin:write`) |
 | **Webhooks** | `list-webhooks`, `create-webhook` (secret returned once), `get-webhook-options` |
 | **Members and team** | `list-members`, `invite-member`, `change-member-role`, `remove-member`, `list-invitations`, `resend-invitation`, `cancel-invitation`, `list-roles`, `update-team`, `get-settings`, `update-team-setting`, `list-exports`, `start-export`, `delete-export`, `get-integrations` |
 

@@ -3,6 +3,7 @@ import { registerBusinessProfileTools } from "./tools/business-profiles.js";
 import { registerCrmTools } from "./tools/crm.js";
 import { registerCrmSettingsTools } from "./tools/crm-settings.js";
 import { registerCampaignTools } from "./tools/campaigns.js";
+import { registerCommuniqateTools } from "./tools/communiqate.js";
 import { registerConnectionTools } from "./tools/connections.js";
 import { registerCustomerAdminTools } from "./tools/customers-admin.js";
 import { registerInvoiceTools } from "./tools/invoices.js";
@@ -102,6 +103,7 @@ export function createServer(options: CreateServerOptions = {}): McpServer {
   registerSettingsTools(server, client);
   registerCrmSettingsTools(server, client);
   registerCampaignTools(server, client);
+  registerCommuniqateTools(server, client);
   registerConnectionTools(server, client);
   registerCustomerAdminTools(server, client);
   registerInvoiceTools(server, client);
