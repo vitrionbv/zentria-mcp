@@ -106,6 +106,15 @@ const EXPECTED_TOOLS = [
   "mail-send",
   "mail-get-message",
   "mail-list-messages",
+  "get-campaign-status",
+  "get-customer-status",
+  "get-campaign-google-data",
+  "get-business-profile-grid",
+  "list-business-profile-grid-runs",
+  "get-business-profile-grid-run",
+  "start-business-profile-grid-run",
+  "list-business-profile-service-pushes",
+  "get-sales-attribution-report",
 ];
 
 import { scopesNamedIn } from "./create-server.js";
@@ -146,6 +155,18 @@ describe("scope aware tools", () => {
     expect(readOnly).not.toContain("mail-send");
     expect(sender).toContain("mail-send");
     expect(sender).not.toContain("mail-list-messages");
+  });
+
+  it("lists the status tools for a token with only one of their section scopes, and grid runs only with the admin scope", () => {
+    const dashboard = listRegisteredToolNames(createServer({ scopes: ["dashboard:read"] }));
+    const reader = listRegisteredToolNames(createServer({ scopes: ["business-profiles:read"] }));
+    const admin = listRegisteredToolNames(createServer({ scopes: ["business-profiles-admin:write"] }));
+
+    expect(dashboard).toContain("get-campaign-status");
+    expect(dashboard).toContain("get-customer-status");
+    expect(reader).toContain("get-business-profile-grid");
+    expect(reader).not.toContain("start-business-profile-grid-run");
+    expect(admin).toContain("start-business-profile-grid-run");
   });
 
   it("registers every tool when the token lists no scopes", () => {

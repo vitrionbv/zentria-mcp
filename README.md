@@ -116,6 +116,7 @@ location = /mcp {
 ## For AI agents
 
 - Call **`get-me`** first to learn the bound team, enabled modules, and token scopes.
+- For "how is customer X doing?" call **`get-campaign-status`** (one campaign) or **`get-customer-status`** (all campaigns of a customer): leads and goals this month, the latest leads, Search Console and GA4 against the previous period, Business Profile results, grid scores with trend, reviews and open invoices in one call.
 - API keys are bound to **one team** — you cannot switch teams with headers.
 - Use the narrowest scopes when minting keys (`sales:read`, `sales:write`, etc.).
 - Public API docs: [`/api/public/docs`](https://app.zentria.nl/api/public/docs)
@@ -123,7 +124,7 @@ location = /mcp {
 
 ## Tool groups
 
-343 tools. They cover what you can do in the Zentria app, limited by the rights of the member behind the key and by the scopes of the key. In the hosted connector (HTTP mode) only the tools that fit the scopes of the token are listed, so a read-only connection sees about 110 tools.
+352 tools. They cover what you can do in the Zentria app, limited by the rights of the member behind the key and by the scopes of the key. In the hosted connector (HTTP mode) only the tools that fit the scopes of the token are listed, so a read-only connection sees about 135 tools.
 
 | Group | Examples |
 |-------|----------|
@@ -139,6 +140,7 @@ location = /mcp {
 | **Speed to Lead** | `list-stl-flows`, `create-stl-flows-batch`, `list-stl-sms-templates`, `list-stl-leads`, `send-stl-flow-test-sms` |
 | **Business Profiles** | `list-business-profile-locations`, `update-business-profile-location`, `list-business-profile-reviews`, `create-business-profile-review-reply`, `create-business-profile-post`, `create-business-profile-post-schedule`, `list-business-profile-photos`, `list-business-profile-accounts`, `create-business-profile-reply-profile` (scopes `business-profiles:read`, `business-profiles:write`, `business-profiles-admin:write`) |
 | **CommuniQate (WhatsApp)** | `communiqate-get-connection`, `communiqate-list-channels`, `communiqate-list-templates`, `communiqate-create-template`, `communiqate-search-contacts`, `communiqate-list-conversations`, `communiqate-list-messages`, `communiqate-start-conversation`, `communiqate-send-message`, `communiqate-send-template`, `communiqate-upload-file` (only when the team connected CommuniQate in Zentria; scopes `communiqate:read`, `communiqate:write`, `communiqate-admin:write`) |
+| **Status and Google data** | `get-campaign-status`, `get-customer-status` (each section is available or says why not: missing_scope, no_permission, module_off), `get-campaign-google-data` (Search Console, GA4 and Business Profile results of a campaign), `get-business-profile-grid`, `list-business-profile-grid-runs`, `get-business-profile-grid-run` (positions per point with the previous position and top 3), `start-business-profile-grid-run` (paid DataForSEO searches within the team budget), `list-business-profile-service-pushes`, `get-sales-attribution-report` (deals per ad campaign, ad set or ad and the funnel steps they reached) |
 | **Mail** | `mail-list-accounts`, `mail-get-account`, `mail-send` (sends a real email from the team's own address, or via Zentria when the team has no own mail account; pass `idempotencyKey` so a retry never sends twice), `mail-get-message`, `mail-list-messages` (scopes `mail:read`, `mail:write`) |
 | **Webhooks** | `list-webhooks`, `create-webhook` (secret returned once), `get-webhook-options` |
 | **Members and team** | `list-members`, `invite-member`, `change-member-role`, `remove-member`, `list-invitations`, `resend-invitation`, `cancel-invitation`, `list-roles`, `update-team`, `get-settings`, `update-team-setting`, `list-exports`, `start-export`, `delete-export`, `get-integrations` |

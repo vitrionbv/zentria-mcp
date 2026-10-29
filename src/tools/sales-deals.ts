@@ -15,19 +15,24 @@ export function registerSalesDealTools(server: McpServer, client: ZentriaClient)
     "list-deals",
     {
       description:
-        "List sales deals (GET /api/public/sales/deals). Optional pipelineId filter. Scope: sales:read.",
+        "List sales deals (GET /api/public/sales/deals), newest change first. Optional pipelineId and stageId filters. Each deal has stageChangedAt (when it entered its stage) and lastActivityAt (newest note or activity), so you can find deals that sat in one stage without contact, plus bookingUrl and origin (ad campaign, ad set and ad it came from, and the funnel milestones it reached). Scope: sales:read.",
       annotations: { readOnlyHint: true },
       inputSchema: z.object({
         ...paginationSchema,
         pipelineId: z.number().int().positive().optional().describe("Filter by pipeline id."),
+        stageId: z.number().int().positive().optional().describe("Filter by stage id (see list-pipelines)."),
       }),
     },
     async (input) => {
-      const { pipelineId, ...pagination } = input;
+      const { pipelineId, stageId, ...pagination } = input;
       const query = paginationQuery(pagination);
 
       if (pipelineId !== undefined) {
         query.pipelineId = pipelineId;
+      }
+
+      if (stageId !== undefined) {
+        query.stageId = stageId;
       }
 
       return client.request({ path: "/api/public/sales/deals", query });
@@ -76,7 +81,8 @@ export function registerSalesDealTools(server: McpServer, client: ZentriaClient)
     server,
     "get-deal",
     {
-      description: "Fetch a sales deal (GET /api/public/sales/deals/{id}). Scope: sales:read.",
+      description:
+        "Fetch a sales deal (GET /api/public/sales/deals/{id}) with person, organization, stage, stageChangedAt, lastActivityAt, bookingUrl (short Cal.com booking link for the contact) and origin: the ad platform, campaign, ad set and ad the lead came from, utm values, consent and the funnel milestones reached (booked, no_show, offer, won, lost) with their times. Scope: sales:read.",
       annotations: { readOnlyHint: true },
       inputSchema: z.object({
         id: z.number().int().positive().describe("Deal id."),
