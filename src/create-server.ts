@@ -7,6 +7,7 @@ import { registerCommuniqateTools } from "./tools/communiqate.js";
 import { registerConnectionTools } from "./tools/connections.js";
 import { registerCustomerAdminTools } from "./tools/customers-admin.js";
 import { registerInvoiceTools } from "./tools/invoices.js";
+import { registerMailTools } from "./tools/mail.js";
 import { registerSalesAdminTools } from "./tools/sales-admin.js";
 import { registerBusinessProfileAdminTools } from "./tools/business-profiles-admin.js";
 import { registerTeamAdminTools } from "./tools/team-admin.js";
@@ -107,6 +108,7 @@ export function createServer(options: CreateServerOptions = {}): McpServer {
   registerConnectionTools(server, client);
   registerCustomerAdminTools(server, client);
   registerInvoiceTools(server, client);
+  registerMailTools(server, client);
   registerSalesAdminTools(server, client);
   registerBusinessProfileAdminTools(server, client);
   registerTeamAdminTools(server, client);

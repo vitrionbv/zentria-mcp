@@ -83,6 +83,7 @@ export class ZentriaClient {
     const url = `${this.baseUrl}${path.startsWith("/") ? path : `/${path}`}`;
 
     const headers: Record<string, string> = {
+      ...options.headers,
       Authorization: `Bearer ${this.apiKey}`,
       Accept: options.accept ?? "application/json",
       "User-Agent": USER_AGENT,

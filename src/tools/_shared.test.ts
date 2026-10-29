@@ -71,4 +71,25 @@ describe("registerApiTool", () => {
       body: { reason: "r" },
     });
   });
+
+  it("sends mapped input keys as headers, not in the body", async () => {
+    const { calls, run } = setup({
+      name: "send-thing",
+      description: "x",
+      method: "POST",
+      path: "/api/public/things",
+      input: { idempotencyKey: z.string().optional(), subject: z.string() },
+      headers: { idempotencyKey: "Idempotency-Key" },
+    });
+    await run({ idempotencyKey: "abc-1", subject: "Hi" });
+    await run({ subject: "Again" });
+    expect(calls[0]).toEqual({
+      method: "POST",
+      path: "/api/public/things",
+      query: undefined,
+      body: { subject: "Hi" },
+      headers: { "Idempotency-Key": "abc-1" },
+    });
+    expect(calls[1]).not.toHaveProperty("headers");
+  });
 });

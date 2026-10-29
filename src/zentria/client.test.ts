@@ -54,6 +54,25 @@ describe("ZentriaClient", () => {
     });
   });
 
+  it("sends extra headers without letting them replace Authorization", async () => {
+    const fetchImpl = vi.fn(async () => new Response(JSON.stringify({ id: 5 }), { status: 202 }));
+
+    const client = new ZentriaClient({ fetchImpl });
+    await client.request({
+      method: "POST",
+      path: "/api/public/mail/messages",
+      body: { subject: "Hi" },
+      headers: { "Idempotency-Key": "key-1", Authorization: "Bearer other" },
+    });
+
+    const [, init] = fetchImpl.mock.calls[0] as unknown as [string, RequestInit];
+    expect(init.headers).toMatchObject({
+      "Idempotency-Key": "key-1",
+      Authorization: "Bearer pat-test",
+      "Content-Type": "application/json",
+    });
+  });
+
   it("maps 401 to ZentriaUnauthorizedError", async () => {
     const fetchImpl = vi.fn(async () =>
       new Response(JSON.stringify({ message: "Invalid token" }), {

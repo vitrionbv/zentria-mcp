@@ -101,6 +101,11 @@ const EXPECTED_TOOLS = [
   "change-member-role",
   "get-settings",
   "get-integrations",
+  "mail-list-accounts",
+  "mail-get-account",
+  "mail-send",
+  "mail-get-message",
+  "mail-list-messages",
 ];
 
 import { scopesNamedIn } from "./create-server.js";
@@ -131,6 +136,16 @@ describe("scope aware tools", () => {
     expect(readOnly).not.toContain("approve-crm-lead");
     expect(readOnly).not.toContain("create-customer");
     expect(readOnly).not.toContain("list-deals");
+  });
+
+  it("lists mail-send only for a token with mail:write", () => {
+    const readOnly = listRegisteredToolNames(createServer({ scopes: ["mail:read"] }));
+    const sender = listRegisteredToolNames(createServer({ scopes: ["mail:write"] }));
+
+    expect(readOnly).toContain("mail-list-messages");
+    expect(readOnly).not.toContain("mail-send");
+    expect(sender).toContain("mail-send");
+    expect(sender).not.toContain("mail-list-messages");
   });
 
   it("registers every tool when the token lists no scopes", () => {

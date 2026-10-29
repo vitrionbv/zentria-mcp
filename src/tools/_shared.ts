@@ -144,6 +144,8 @@ export interface ApiToolSpec<T extends z.ZodRawShape> {
   query?: Array<keyof T & string>;
   /** Map an input key to a different API field or query name, for example `{ firstSeenAfter: "firstSeenAt[after]" }`. */
   rename?: Partial<Record<keyof T & string, string>>;
+  /** Send these input keys as request headers instead, for example `{ idempotencyKey: "Idempotency-Key" }`. */
+  headers?: Partial<Record<keyof T & string, string>>;
   /** Defaults to true for GET. */
   readOnly?: boolean;
   /** Mark tools that delete or irreversibly change data. */
@@ -156,7 +158,15 @@ export interface ApiToolSpec<T extends z.ZodRawShape> {
  */
 export function registerApiTool<T extends z.ZodRawShape>(
   server: McpServer,
-  client: { request(options: { method?: HttpMethod; path: string; query?: Record<string, string | number | boolean | undefined | null>; body?: unknown }): Promise<unknown> },
+  client: {
+    request(options: {
+      method?: HttpMethod;
+      path: string;
+      query?: Record<string, string | number | boolean | undefined | null>;
+      body?: unknown;
+      headers?: Record<string, string>;
+    }): Promise<unknown>;
+  },
   spec: ApiToolSpec<T>,
 ): void {
   const method = spec.method ?? "GET";
@@ -177,6 +187,7 @@ export function registerApiTool<T extends z.ZodRawShape>(
     async (input: Record<string, unknown>) => {
       const query: Record<string, string | number | boolean | undefined | null> = {};
       const body: Record<string, unknown> = {};
+      const headers: Record<string, string> = {};
       let path = spec.path;
 
       for (const [key, value] of Object.entries(input)) {
@@ -186,6 +197,13 @@ export function registerApiTool<T extends z.ZodRawShape>(
         }
 
         if (value === undefined) {
+          continue;
+        }
+
+        const header = (spec.headers as Record<string, string> | undefined)?.[key];
+
+        if (header) {
+          headers[header] = String(value);
           continue;
         }
 
@@ -204,6 +222,7 @@ export function registerApiTool<T extends z.ZodRawShape>(
         path,
         query: Object.keys(query).length > 0 ? query : undefined,
         body: method === "GET" ? undefined : body,
+        ...(Object.keys(headers).length > 0 ? { headers } : {}),
       });
     },
   );

@@ -4,6 +4,8 @@ export type ZentriaRequestOptions = {
   query?: Record<string, string | number | boolean | undefined | null>;
   body?: Record<string, unknown> | unknown;
   accept?: string;
+  /** Extra request headers, for example Idempotency-Key. They cannot replace Authorization, Accept, User-Agent or Content-Type. */
+  headers?: Record<string, string>;
 };
 
 export type ZentriaMeResponse = {
