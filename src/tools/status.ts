@@ -82,10 +82,16 @@ export function registerStatusTools(server: McpServer, client: ZentriaClient): v
   registerApiTool(server, client, {
     name: "start-business-profile-grid-run",
     description:
-      "Start a grid measurement of a location now, one run per keyword of its grid (POST /api/public/business-profiles/locations/{locationId}/grid/run). Costs money: every point is a paid DataForSEO search (about $0.0006, so a 7x7 grid with 3 keywords is about $0.09), within the team's monthly budget. Confirm with the user first. Refused (422) when the location has no grid, the team has no DataForSEO login, a run is still open or the budget would be exceeded. Results arrive within minutes: poll get-business-profile-grid-run. Scope: business-profiles-admin:write.",
+      "Start a grid measurement of a location now, one run per keyword of its grid (POST /api/public/business-profiles/locations/{locationId}/grid/run). Costs money: every point is a paid DataForSEO search within the team's monthly budget. mode live (default, \"Snel\") is done in about 20 seconds at about $0.002 per point (7x7 with 3 keywords is about $0.29); mode standard (\"Goedkoop\") goes through the DataForSEO queue at about $0.0006 per point (about $0.09) and takes a few minutes. estimateUsd and estimateStandardUsd of get-business-profile-grid give the exact cost. Confirm the cost and mode with the user first. Refused (422) when the location has no grid, the team has no DataForSEO login, a run is still open or the budget would be exceeded. Poll get-business-profile-grid-run for the result. Scope: business-profiles-admin:write.",
     method: "POST",
     path: "/api/public/business-profiles/locations/{locationId}/grid/run",
-    input: { locationId: z.number().int().positive().describe("Location id with a grid (see get-business-profile-grid).") },
+    input: {
+      locationId: z.number().int().positive().describe("Location id with a grid (see get-business-profile-grid)."),
+      mode: z
+        .enum(["live", "standard"])
+        .optional()
+        .describe("live (default): fast, about 20 seconds. standard: about a third of the price, a few minutes."),
+    },
     readOnly: false,
   });
 

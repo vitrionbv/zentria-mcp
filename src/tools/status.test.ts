@@ -35,6 +35,12 @@ describe("status tools", () => {
     expect(calls[0]).toMatchObject({ method: "POST", path: "/api/public/business-profiles/locations/5/grid/run" });
   });
 
+  it("sends the cheap mode of a grid run in the body", async () => {
+    const { calls, run } = statusTools();
+    await run("start-business-profile-grid-run", { locationId: 5, mode: "standard" });
+    expect(calls[0]).toMatchObject({ method: "POST", path: "/api/public/business-profiles/locations/5/grid/run", body: { mode: "standard" } });
+  });
+
   it("filters grid runs on campaign and keyword", async () => {
     const { calls, run } = statusTools();
     await run("list-business-profile-grid-runs", { campaignId: 3, keyword: "dakdekker", page: 2 });
