@@ -51,7 +51,7 @@ export function registerStatusTools(server: McpServer, client: ZentriaClient): v
   registerApiTool(server, client, {
     name: "get-business-profile-grid",
     description:
-      "Grid rank tracking of a Business Profile location (GET /api/public/business-profiles/locations/{locationId}/grid): the grid (size, radius, keywords, frequency, next run; null when not set up), the cost estimate of one run, the DataForSEO budget of the team (connected, monthly budget, spent this month), the latest finished run per keyword with gridScore (0-100), avgRank, top3Pct, top10Pct, foundPct, the score of the run before and the trend, and the latest 20 runs. Grid score per point: position 1-3 = 100, 4-10 = 50, 11-20 = 20, lower or not found = 0. Scope: business-profiles:read.",
+      "Grid rank tracking of a Business Profile location (GET /api/public/business-profiles/locations/{locationId}/grid): the grid (size, radius, keywords, frequency, source of its scheduled runs, next run; null when not set up), the cost estimate of one run (estimates[source][depth][live|standard] for every choice), the DataForSEO budget of the team (connected, monthly budget, spent this month), the latest finished run per keyword and source with gridScore (0-100), avgRank, top3Pct, top10Pct, foundPct, the score of the run before and the trend, and the latest 20 runs. Every run has a source: search (Google Search on mobile, 15 deep by default; top 3 = the local block above the regular results) or maps (Google Maps, 100 deep; all runs from before the source choice). Scores of the two sources do not compare, so never mix them in one trend. Grid score per point: position 1-3 = 100, 4-10 = 50, 11-20 = 20, lower or not found = 0. Scope: business-profiles:read.",
     path: "/api/public/business-profiles/locations/{locationId}/grid",
     input: { locationId: z.number().int().positive().describe("Location id from list-business-profile-locations.") },
   });
@@ -59,13 +59,14 @@ export function registerStatusTools(server: McpServer, client: ZentriaClient): v
   registerApiTool(server, client, {
     name: "list-business-profile-grid-runs",
     description:
-      "List grid measurements of the team, newest first, without points (GET /api/public/business-profiles/grid-runs). Each run is one keyword on one location with status (queued, running, done, partial, failed), gridScore, avgRank, top3Pct, top10Pct, foundPct, costUsd and times. Filter on location, campaign, customer, keyword or status. Scope: business-profiles:read.",
+      "List grid measurements of the team, newest first, without points (GET /api/public/business-profiles/grid-runs). Each run is one keyword on one location with source (search or maps), depth, status (queued, running, done, partial, failed), gridScore, avgRank, top3Pct, top10Pct, foundPct, costUsd and times. Filter on location, campaign, customer, keyword, source or status. Scope: business-profiles:read.",
     path: "/api/public/business-profiles/grid-runs",
     input: {
       locationId: z.number().int().positive().optional(),
       campaignId: z.number().int().positive().optional().describe("Only runs of locations linked to this campaign."),
       customerId: z.number().int().positive().optional().describe("Only runs of locations linked to this customer."),
       keyword: z.string().min(1).optional().describe("Exact keyword, case insensitive."),
+      source: z.enum(["search", "maps"]).optional().describe("search (Google Search) or maps (Google Maps)."),
       status: z.enum(["queued", "running", "done", "partial", "failed"]).optional(),
       ...page,
     },
@@ -74,7 +75,7 @@ export function registerStatusTools(server: McpServer, client: ZentriaClient): v
   registerApiTool(server, client, {
     name: "get-business-profile-grid-run",
     description:
-      "One grid measurement with every point (GET /api/public/business-profiles/grid-runs/{id}): row, col, lat, lng, rank (null = not in the top 100), previousRank at the same point in the run before, and the top 3 results there (competitors). Also the previous run's summary. Use it to say where on the map the listing ranks well or badly. Scope: business-profiles:read.",
+      "One grid measurement with every point (GET /api/public/business-profiles/grid-runs/{id}): row, col, lat, lng, rank (null = not in the results: the depth of the run (15 by default) for source search, top 100 for maps; rank 1-3 on search is the local block), previousRank at the same point in the previous run of the same source, and the top 3 results there (competitors). Also the previous run's summary. Use it to say where on the map the listing ranks well or badly. Scope: business-profiles:read.",
     path: "/api/public/business-profiles/grid-runs/{id}",
     input: { id: z.number().int().positive().describe("Grid run id.") },
   });
@@ -82,7 +83,7 @@ export function registerStatusTools(server: McpServer, client: ZentriaClient): v
   registerApiTool(server, client, {
     name: "start-business-profile-grid-run",
     description:
-      "Start a grid measurement of a location now, one run per keyword of its grid (POST /api/public/business-profiles/locations/{locationId}/grid/run). Costs money: every point is a paid DataForSEO search within the team's monthly budget. mode live (default, \"Snel\") is done in about 20 seconds at about $0.002 per point (7x7 with 3 keywords is about $0.29); mode standard (\"Goedkoop\") goes through the DataForSEO queue at about $0.0006 per point (about $0.09) and takes a few minutes. estimateUsd and estimateStandardUsd of get-business-profile-grid give the exact cost. Confirm the cost and mode with the user first. Refused (422) when the location has no grid, the team has no DataForSEO login, a run is still open or the budget would be exceeded. Poll get-business-profile-grid-run for the result. Scope: business-profiles-admin:write.",
+      "Start a grid measurement of a location now, one run per keyword of its grid (POST /api/public/business-profiles/locations/{locationId}/grid/run). Costs money: every point is a paid DataForSEO search within the team's monthly budget. source search (default, Google Search on mobile, top 15) costs twice as much as maps (Google Maps, top 100), because DataForSEO bills Search per 10 places rounded up; search with depth 10 costs the same as maps. The prices below are for maps or search depth 10. mode live (default, \"Snel\") is done in about 20 seconds at about $0.002 per point (7x7 with 3 keywords is about $0.29); mode standard (\"Goedkoop\") goes through the DataForSEO queue at about $0.0006 per point (about $0.09) and takes a few minutes. estimates of get-business-profile-grid give the exact cost of every choice. Confirm the cost, source and mode with the user first. Refused (422) when the location has no grid, the team has no DataForSEO login, a run is still open or the budget would be exceeded. Poll get-business-profile-grid-run for the result. Scope: business-profiles-admin:write.",
     method: "POST",
     path: "/api/public/business-profiles/locations/{locationId}/grid/run",
     input: {
@@ -91,6 +92,14 @@ export function registerStatusTools(server: McpServer, client: ZentriaClient): v
         .enum(["live", "standard"])
         .optional()
         .describe("live (default): fast, about 20 seconds. standard: about a third of the price, a few minutes."),
+      source: z
+        .enum(["search", "maps"])
+        .optional()
+        .describe("search (default): Google Search on mobile, where most people search; top 3 is the local block. maps: Google Maps, up to position 100, like runs from before the source choice."),
+      depth: z
+        .union([z.literal(15), z.literal(10), z.literal(20)])
+        .optional()
+        .describe("Search only: 15 (default), 10 (half the price) or 20 (same price as 15)."),
     },
     readOnly: false,
   });
