@@ -5,6 +5,12 @@ import { paginationSchema, registerApiTool } from "./_shared.js";
 
 const invoiceId = z.number().int().positive().describe("Invoice id.");
 
+const adjustmentId = z.number().int().positive().describe("Invoice correction id.");
+
+const ADJUSTMENT_REASONS = ["reclamation", "duplicate_lead", "price_correction", "other"] as const;
+
+const ADJUSTMENT_STATUSES = ["pending", "applied", "settled_externally", "withdrawn"] as const;
+
 const INVOICE_STATUSES = [
   "draft",
   "ready",
@@ -123,5 +129,84 @@ export function registerInvoiceTools(server: McpServer, client: ZentriaClient): 
     method: "POST",
     path: "/api/public/invoices/{id}/resume-reminders",
     input: { id: invoiceId },
+  });
+
+  registerApiTool(server, client, {
+    name: "list-invoice-adjustments",
+    description:
+      "List invoice corrections (discounts, extra charges and lead credits), newest first (GET /api/public/invoice-adjustments). Use status=pending for credits that still wait for the next invoice. Negative amounts are a credit, in integer cents. Scope: invoices:read.",
+    path: "/api/public/invoice-adjustments",
+    input: {
+      ...paginationSchema,
+      customerId: z.number().int().positive().optional().describe("Only corrections of this customer."),
+      invoiceId: z.number().int().positive().optional().describe("Only corrections on this invoice."),
+      crmLeadId: z.number().int().positive().optional().describe("Only corrections for this lead."),
+      status: z.enum(ADJUSTMENT_STATUSES).optional(),
+    },
+  });
+
+  registerApiTool(server, client, {
+    name: "get-invoice-adjustment",
+    description: "Fetch one invoice correction (GET /api/public/invoice-adjustments/{id}). Scope: invoices:read.",
+    path: "/api/public/invoice-adjustments/{id}",
+    input: { id: adjustmentId },
+  });
+
+  registerApiTool(server, client, {
+    name: "add-invoice-adjustment",
+    description:
+      "Add a correction line to a draft invoice (POST /api/public/invoices/{id}/adjustments): a discount (negative amountCents) or an extra charge (positive). The description is shown to the customer. The invoice total cannot go below zero. Refused (422) when the invoice is not a draft; for a lead on a sent invoice use credit-crm-lead. Scope: invoices:write.",
+    method: "POST",
+    path: "/api/public/invoices/{id}/adjustments",
+    input: {
+      id: invoiceId,
+      amountCents: z.number().int().describe("Integer cents, ex VAT. Negative for a discount, positive for an extra charge. Not 0."),
+      reason: z.enum(ADJUSTMENT_REASONS),
+      description: z.string().min(1).max(255).describe("Text on the invoice, for example 'Korting dubbele aanvraag'."),
+      crmLeadId: z.number().int().positive().optional().describe("The lead this correction is about, if any."),
+    },
+  });
+
+  registerApiTool(server, client, {
+    name: "remove-invoice-adjustment",
+    description:
+      "Take a correction off its draft invoice (DELETE /api/public/invoice-adjustments/{id}). A manual correction is deleted; a lead credit goes back to waiting for the next invoice. Refused (422) when the invoice is no longer a draft. Scope: invoices:write.",
+    method: "DELETE",
+    path: "/api/public/invoice-adjustments/{id}",
+    input: { id: adjustmentId },
+    destructive: true,
+  });
+
+  registerApiTool(server, client, {
+    name: "credit-crm-lead",
+    description:
+      "Credit a lead that is on an invoice that already went out (POST /api/public/crm/leads/{id}/credit). Without amountCents the full billed amount is credited. The credit is deducted on the open draft of the customer, or waits for the next invoice. A lead on a draft invoice cannot be credited: reject it instead. Scope: invoices:write.",
+    method: "POST",
+    path: "/api/public/crm/leads/{id}/credit",
+    input: {
+      id: z.number().int().positive().describe("CRM lead id."),
+      reason: z.enum(ADJUSTMENT_REASONS),
+      amountCents: z.number().int().positive().optional().describe("Integer cents ex VAT to credit, at most what was billed for the lead."),
+      description: z.string().max(255).optional().describe("Text on the invoice. Defaults to the reason and the lead."),
+    },
+  });
+
+  registerApiTool(server, client, {
+    name: "withdraw-invoice-adjustment",
+    description:
+      "Withdraw a waiting (pending) correction so it never lands on an invoice (POST /api/public/invoice-adjustments/{id}/withdraw). Scope: invoices:write.",
+    method: "POST",
+    path: "/api/public/invoice-adjustments/{id}/withdraw",
+    input: { id: adjustmentId },
+    destructive: true,
+  });
+
+  registerApiTool(server, client, {
+    name: "settle-invoice-adjustment",
+    description:
+      "Mark a waiting (pending) credit as settled outside Zentria, for example with a credit note or refund in Mollie (POST /api/public/invoice-adjustments/{id}/settle). Scope: invoices:write.",
+    method: "POST",
+    path: "/api/public/invoice-adjustments/{id}/settle",
+    input: { id: adjustmentId, reference: z.string().max(255).optional().describe("For example the credit note number.") },
   });
 }

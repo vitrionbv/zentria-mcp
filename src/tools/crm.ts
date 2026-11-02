@@ -162,7 +162,7 @@ export function registerCrmTools(server: McpServer, client: ZentriaClient): void
   registerApiTool(server, client, {
     name: "reject-crm-lead",
     description:
-      "Reject a CRM lead (POST /api/public/crm/leads/{id}/reject). A reason is required. Scope: crm:write.",
+      "Reject a CRM lead (POST /api/public/crm/leads/{id}/reject). A reason is required. On a lead of an invoice that already went out, this credits what was billed for it on the next invoice of the customer, and needs the Manage invoices right; approving it again withdraws or charges back that credit. Scope: crm:write.",
     method: "POST",
     path: "/api/public/crm/leads/{id}/reject",
     input: {
@@ -219,7 +219,7 @@ export function registerCrmTools(server: McpServer, client: ZentriaClient): void
   registerApiTool(server, client, {
     name: "set-crm-lead-value",
     description:
-      "Set the lead value category of a CRM lead; the amount follows from the category and customer prices (PUT /api/public/crm/leads/{id}/lead-value). Not possible for a lead that is on an invoice. Scope: crm-values:write.",
+      "Set the lead value category of a CRM lead; the amount follows from the category and customer prices (PUT /api/public/crm/leads/{id}/lead-value). On a lead of a draft invoice the invoice line follows. On a lead of an invoice that already went out, the difference with what was billed waits for the next invoice (a credit or an extra charge), and needs the Manage invoices right. Scope: crm-values:write.",
     method: "PUT",
     path: "/api/public/crm/leads/{id}/lead-value",
     input: {
