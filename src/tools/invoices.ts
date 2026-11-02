@@ -62,7 +62,7 @@ export function registerInvoiceTools(server: McpServer, client: ZentriaClient): 
   registerApiTool(server, client, {
     name: "cancel-invoice",
     description:
-      "Cancel an invoice: the Mollie sales invoice is cancelled and the leads are released (POST /api/public/invoices/{id}/cancel). Refused (422) when the invoice cannot be cancelled. Scope: invoices:write.",
+      "Cancel an issued (sent) or overdue invoice (POST /api/public/invoices/{id}/cancel). The Mollie sales invoice is cancelled, and Zentria then builds and issues a replacement invoice for the same week with the approved leads, so those leads are billed again. To drop an invoice without billing its leads again, use skip-invoice-collection instead. Refused (422) for a draft, a paid invoice or another status that cannot be cancelled. Scope: invoices:write.",
     method: "POST",
     path: "/api/public/invoices/{id}/cancel",
     input: { id: invoiceId, reason: z.string().max(255).optional().describe("Reason for the cancellation.") },
@@ -92,7 +92,7 @@ export function registerInvoiceTools(server: McpServer, client: ZentriaClient): 
   registerApiTool(server, client, {
     name: "skip-invoice-collection",
     description:
-      "Keep an invoice out of the automatic collection (POST /api/public/invoices/{id}/skip-collection). Scope: invoices:write.",
+      "Keep an invoice out of the automatic collection: it is not issued or collected (POST /api/public/invoices/{id}/skip-collection). Its leads stay on this invoice, so they are not billed on a later invoice either. Use this to drop a draft invoice. Works on a draft, ready, failed or sent invoice. Scope: invoices:write.",
     method: "POST",
     path: "/api/public/invoices/{id}/skip-collection",
     input: { id: invoiceId },
