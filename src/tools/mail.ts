@@ -77,7 +77,7 @@ export function registerMailTools(server: McpServer, client: ZentriaClient): voi
   registerApiTool(server, client, {
     name: "mail-get-message",
     description:
-      "Get one sent mail with its status (queued, sent, failed), recipients, account or via Zentria, attempts, error and times (GET /api/public/mail/messages/{id}). Bodies (html, text) are only included for mails sent through the API. Sent means accepted by the mail server; bounces are not tracked. Scope: mail:read.",
+      "Get one sent mail with its status (queued, sent, failed), recipients, account or via Zentria, attempts, error and times (GET /api/public/mail/messages/{id}). Bodies (html, text) are included for mails of the last 90 days, as sent; tokens in portal invitation and password reset links are replaced by [verwijderd]. Sent means accepted by the mail server; bounces are not tracked. Scope: mail:read.",
     path: "/api/public/mail/messages/{id}",
     input: { id: z.number().int().positive().describe("Mail message id.") },
   });

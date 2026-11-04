@@ -1,21 +1,19 @@
 import { McpServer } from "@modelcontextprotocol/server";
+import { registerBusinessProfileAdminTools } from "./tools/business-profiles-admin.js";
 import { registerBusinessProfileTools } from "./tools/business-profiles.js";
-import { registerCrmTools } from "./tools/crm.js";
-import { registerCrmSettingsTools } from "./tools/crm-settings.js";
 import { registerCampaignTools } from "./tools/campaigns.js";
 import { registerCommuniqateTools } from "./tools/communiqate.js";
 import { registerConnectionTools } from "./tools/connections.js";
+import { registerCrmSettingsTools } from "./tools/crm-settings.js";
+import { registerCrmTools } from "./tools/crm.js";
 import { registerCustomerAdminTools } from "./tools/customers-admin.js";
-import { registerInvoiceTools } from "./tools/invoices.js";
-import { registerMailTools } from "./tools/mail.js";
-import { registerStatusTools } from "./tools/status.js";
-import { registerSalesAdminTools } from "./tools/sales-admin.js";
-import { registerBusinessProfileAdminTools } from "./tools/business-profiles-admin.js";
-import { registerTeamAdminTools } from "./tools/team-admin.js";
 import { registerCustomerTools } from "./tools/customers.js";
 import { registerDiscoveryTools } from "./tools/discovery.js";
+import { registerInvoiceTools } from "./tools/invoices.js";
+import { registerMailTools } from "./tools/mail.js";
 import { registerMemberTools, registerSettingsTools } from "./tools/members.js";
 import { registerSalesActivityTools } from "./tools/sales-activities.js";
+import { registerSalesAdminTools } from "./tools/sales-admin.js";
 import { registerSalesDealTools } from "./tools/sales-deals.js";
 import {
   registerSalesFormTools,
@@ -25,7 +23,9 @@ import { registerSalesNoteTools } from "./tools/sales-notes.js";
 import { registerSalesOrganizationTools } from "./tools/sales-organizations.js";
 import { registerSalesPeopleTools } from "./tools/sales-people.js";
 import { registerSalesPipelineTools } from "./tools/sales-pipelines.js";
+import { registerStatusTools } from "./tools/status.js";
 import { registerStlTools } from "./tools/stl.js";
+import { registerTeamAdminTools } from "./tools/team-admin.js";
 import { registerTodoTools } from "./tools/todos.js";
 import { registerWebhookTools } from "./tools/webhooks.js";
 import { PACKAGE_NAME, PACKAGE_VERSION } from "./version.js";

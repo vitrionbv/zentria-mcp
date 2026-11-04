@@ -28,14 +28,14 @@ export function registerInvoiceTools(server: McpServer, client: ZentriaClient): 
   registerApiTool(server, client, {
     name: "list-invoices",
     description:
-      "List invoices of customers with invoicing on, newest period first (GET /api/public/invoices). Amounts are integer cents. Scope: invoices:read.",
+      "List invoices of customers with invoicing on, newest period first (GET /api/public/invoices). Amounts are integer cents. remindersPauseSource says who paused reminders: automatic (after the team's auto-pause number of reminders on that invoice) or manual (a person); read it instead of the free-text remindersPausedReason. Scope: invoices:read.",
     path: "/api/public/invoices",
     input: {
       ...paginationSchema,
       customerId: z.number().int().positive().optional().describe("Only invoices of this customer."),
       status: z.enum(INVOICE_STATUSES).optional(),
       period: z.string().regex(/^\d{4}-W\d{2}$/).optional().describe("ISO week of the invoice, for example 2026-W07."),
-      outstanding: z.boolean().optional().describe("true: only invoices that still have to be paid."),
+      outstanding: z.boolean().optional().describe("true: only invoices that still have to be paid: ready, sent, failed or overdue. Drafts and charged back invoices are left out."),
       withLines: z.boolean().optional().describe("true: include the invoice lines."),
     },
   });
@@ -43,7 +43,7 @@ export function registerInvoiceTools(server: McpServer, client: ZentriaClient): 
   registerApiTool(server, client, {
     name: "get-invoice",
     description:
-      "Fetch an invoice with its lines, payment attempts and reminder log (GET /api/public/invoices/{id}). Scope: invoices:read.",
+      "Fetch an invoice with its lines, payment attempts and reminder log (GET /api/public/invoices/{id}). remindersPauseSource says who paused reminders: automatic (after the team's auto-pause number of reminders on that invoice) or manual (a person); read it instead of the free-text remindersPausedReason. Scope: invoices:read.",
     path: "/api/public/invoices/{id}",
     input: { id: invoiceId },
   });
@@ -54,6 +54,16 @@ export function registerInvoiceTools(server: McpServer, client: ZentriaClient): 
       "Invoice totals of one customer per status, the outstanding amount and a compact list of its invoices (GET /api/public/customers/{id}/invoice-summary). Scope: invoices:read.",
     path: "/api/public/customers/{id}/invoice-summary",
     input: { id: z.number().int().positive().describe("Customer id.") },
+  });
+
+  registerApiTool(server, client, {
+    name: "get-invoice-pdf-link",
+    description:
+      "Get a download link for the official Mollie PDF of an issued invoice (POST /api/public/invoices/{id}/pdf-link). Returns url, expiresAt (15 minutes), fileName (after the Mollie invoice number) and invoiceNumber. The link works without an API key, so share it only with people who may see the invoice. Refused (422) for a draft that is not issued in Mollie yet; 404 when Mollie has no PDF (hasPdf on the invoice is false). Scope: invoices:read.",
+    method: "POST",
+    path: "/api/public/invoices/{id}/pdf-link",
+    input: { id: invoiceId },
+    readOnly: true,
   });
 
   registerApiTool(server, client, {
@@ -72,6 +82,24 @@ export function registerInvoiceTools(server: McpServer, client: ZentriaClient): 
     method: "POST",
     path: "/api/public/invoices/{id}/cancel",
     input: { id: invoiceId, reason: z.string().max(255).optional().describe("Reason for the cancellation.") },
+    destructive: true,
+  });
+
+  registerApiTool(server, client, {
+    name: "mark-invoice-paid",
+    description:
+      "Mark an issued (sent), overdue or failed invoice as paid by hand, for example after a bank transfer (POST /api/public/invoices/{id}/mark-paid). Zentria sets the Mollie sales invoice to paid with a manual payment, stops the reminders and sends the invoice.paid webhook. Refused (422) while a collection is running (collectingAt set or mollieStatus pending-payment) so the customer does not pay twice, and for a paid invoice or one without a Mollie sales invoice. When credits for leads on the invoice are still open, the reply has a warning. Scope: invoices:write.",
+    method: "POST",
+    path: "/api/public/invoices/{id}/mark-paid",
+    input: {
+      id: invoiceId,
+      paidAt: z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/)
+        .optional()
+        .describe("Payment date (YYYY-MM-DD), not in the future. Default today. Stored in Zentria only."),
+      note: z.string().max(255).optional().describe("Note, for example the bank transfer reference."),
+    },
     destructive: true,
   });
 
@@ -116,7 +144,7 @@ export function registerInvoiceTools(server: McpServer, client: ZentriaClient): 
   registerApiTool(server, client, {
     name: "pause-invoice-reminders",
     description:
-      "Pause payment reminders for an invoice (POST /api/public/invoices/{id}/pause-reminders). Scope: invoices:write.",
+      "Pause payment reminders for an invoice (POST /api/public/invoices/{id}/pause-reminders). Sets remindersPauseSource to manual. Scope: invoices:write.",
     method: "POST",
     path: "/api/public/invoices/{id}/pause-reminders",
     input: { id: invoiceId, reason: z.string().min(1).max(255).describe("Why reminders are paused.") },

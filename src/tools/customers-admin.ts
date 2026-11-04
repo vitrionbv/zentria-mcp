@@ -21,7 +21,7 @@ export function registerCustomerAdminTools(server: McpServer, client: ZentriaCli
   registerApiTool(server, client, {
     name: "pause-customer-reminders",
     description:
-      "Pause payment reminders for all invoices of a customer (PATCH /api/public/customers/{id}/pause-reminders). Scope: customers:write.",
+      "Pause payment reminders for all invoices of a customer (PATCH /api/public/customers/{id}/pause-reminders). Sets remindersPauseSource to manual. Automatic pauses sit on the invoice, not on the customer. Scope: customers:write.",
     method: "PATCH",
     path: "/api/public/customers/{id}/pause-reminders",
     input: { id: customerId, reason: z.string().min(1).max(255).describe("Why reminders are paused.") },

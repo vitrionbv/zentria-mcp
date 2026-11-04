@@ -27,6 +27,24 @@ const mailboxFields = {
   folder: z.string().min(1).max(255).describe("IMAP folder to poll, for example INBOX."),
   lookbackDays: z.number().int().min(1).max(365).describe("How many days back new mail is looked at."),
   markAsRead: z.boolean().optional(),
+  everyMailIsLead: z
+    .boolean()
+    .optional()
+    .describe("Every mail counts as a real request without the AI check. Only for a mailbox that receives nothing else. Default false."),
+  moveSpam: z
+    .boolean()
+    .optional()
+    .describe('Move obvious advertising and acquisition to the folder "Zentria spam" in the customer\'s mailbox. The lead check runs either way. Default false.'),
+  movePlatformMail: z
+    .boolean()
+    .optional()
+    .describe('With moveSpam, also move platform mail, autoreplies and notifications to "Zentria platforms en automatisch". Default false.'),
+  spamFilterContext: z
+    .string()
+    .max(1000)
+    .nullable()
+    .optional()
+    .describe("What this customer does and which mail is not spam for them, for the spam filter (for example a therapist whose professional newsletters are not spam). Empty or null means the filter assumes a small trade business."),
   isLive: z.boolean().optional().describe("Whether the mailbox is polled. Default true for a new mailbox."),
 };
 
@@ -140,6 +158,10 @@ export function registerConnectionTools(server: McpServer, client: ZentriaClient
       folder: mailboxFields.folder.optional(),
       lookbackDays: mailboxFields.lookbackDays.optional(),
       markAsRead: mailboxFields.markAsRead,
+      everyMailIsLead: mailboxFields.everyMailIsLead,
+      moveSpam: mailboxFields.moveSpam,
+      movePlatformMail: mailboxFields.movePlatformMail,
+      spamFilterContext: mailboxFields.spamFilterContext,
       isLive: mailboxFields.isLive,
       password: z.string().max(255).optional(),
     },
@@ -194,6 +216,24 @@ export function registerConnectionTools(server: McpServer, client: ZentriaClient
       username: z.string().min(1).max(255),
       password: z.string().max(255).optional(),
     },
+  });
+
+  registerApiTool(server, client, {
+    name: "list-mailbox-not-spam-examples",
+    description:
+      'List what the spam filter learned from a mailbox, newest first (GET /api/public/mailbox-connections/{mailboxConnectionId}/not-spam-examples): mail the customer dragged into the folder "Foutief gemarkeerd als spam". Zentria put that mail back in the inbox and leaves mail from the same sender, or the same business domain, in the inbox from then on. The lead verdict does not change. At most 50 per mailbox. Scope: connections:read.',
+    path: "/api/public/mailbox-connections/{mailboxConnectionId}/not-spam-examples",
+    input: { mailboxConnectionId: connectionId("Mailbox"), ...page },
+  });
+
+  registerApiTool(server, client, {
+    name: "delete-mailbox-not-spam-example",
+    description:
+      "Forget one learned mail, so the spam filter judges mail from that sender itself again (DELETE /api/public/mailbox-not-spam-examples/{id}). Scope: connections:write.",
+    method: "DELETE",
+    path: "/api/public/mailbox-not-spam-examples/{id}",
+    input: { id: connectionId("Learned mail") },
+    destructive: true,
   });
 
   // Voys numbers of a campaign
