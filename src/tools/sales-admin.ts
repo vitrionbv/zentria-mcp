@@ -162,6 +162,16 @@ export function registerSalesAdminTools(server: McpServer, client: ZentriaClient
         .nullable()
         .optional()
         .describe("Days without activity before a deal is shown as rotting. null turns it off."),
+      boardHideAfterDays: z
+        .number()
+        .int()
+        .min(1)
+        .max(365)
+        .nullable()
+        .optional()
+        .describe(
+          "Days before lost deals and no-shows without an open task leave the board. Data stays; on a Pipedrive-linked pipeline those no-shows are archived there. null turns it off.",
+        ),
       visibility: z.enum(["team", "restricted"]).optional(),
       memberIds: z
         .array(z.number().int().positive())
