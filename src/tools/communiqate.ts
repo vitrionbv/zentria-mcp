@@ -80,8 +80,12 @@ export function registerCommuniqateTools(server: McpServer, client: ZentriaClien
       whatsappAccount: id("WhatsApp account"),
       name: z.string().min(1).describe("Template name: lowercase letters, digits and underscores."),
       language: z.string().min(2).describe("Language code, for example nl or en_US."),
-      category: z.enum(["MARKETING", "UTILITY", "AUTHENTICATION"]).describe("Meta template category."),
-      components: z.array(z.record(z.string(), z.unknown())).describe("Meta-style components: HEADER, BODY, FOOTER, BUTTONS."),
+      category: z.enum(["marketing", "utility", "authentication"]).describe("Template category, lowercase."),
+      components: z
+        .array(z.record(z.string(), z.unknown()))
+        .describe(
+          'CommuniQate components, lowercase types, each at most once: {type: "header", format: "text", text, header_example?}, {type: "body", text, body_examples?: [{example}]}, {type: "footer", text}, {type: "buttons", buttons: [{type: "quick_reply" | "url" | "phone_number" | "copy_code", text, ...}]}.',
+        ),
       submit_to_whatsapp: z.boolean().optional().describe("Submit to Meta for review in the same call."),
     },
   });
@@ -95,8 +99,11 @@ export function registerCommuniqateTools(server: McpServer, client: ZentriaClien
     input: {
       whatsappAccount: id("WhatsApp account"),
       messageTemplate: id("Message template"),
-      category: z.enum(["MARKETING", "UTILITY", "AUTHENTICATION"]).optional(),
-      components: z.array(z.record(z.string(), z.unknown())).optional(),
+      category: z.enum(["marketing", "utility", "authentication"]).optional(),
+      components: z
+        .array(z.record(z.string(), z.unknown()))
+        .optional()
+        .describe("Replaces all components; same shape as communiqate-create-template."),
     },
   });
 
