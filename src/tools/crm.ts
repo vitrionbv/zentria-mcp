@@ -15,7 +15,7 @@ export function registerCrmTools(server: McpServer, client: ZentriaClient): void
     "list-crm-leads",
     {
       description:
-        "List CRM leads of the team, newest first (GET /api/public/crm/leads). Each lead has its contact details, customer and campaign, source (elementor, voys or mail), review status, lead value (leadValueCents in euro cents plus category key and label, null until classified), billing period and invoice (isInvoiced, invoiceId, invoiceNumber, invoiceStatus, invoicedAmountCents). Use list-crm-lead-value-categories for the category tariffs. The werkbak queues are filters here: needsExtraCheck, workbenchQueue, rejectedByType and rejectionConfirmed. Scope: crm:read.",
+        "List CRM leads of the team, newest first (GET /api/public/crm/leads). Each lead has its contact details, customer and campaign, source (elementor, voys, tentelecom or mail), review status, lead value (leadValueCents in euro cents plus category key and label, null until classified), billing period and invoice (isInvoiced, invoiceId, invoiceNumber, invoiceStatus, invoicedAmountCents). Use list-crm-lead-value-categories for the category tariffs. The werkbak queues are filters here: needsExtraCheck, workbenchQueue, rejectedByType and rejectionConfirmed. Scope: crm:read.",
       annotations: { readOnlyHint: true },
       inputSchema: z.object({
         ...paginationSchema,
@@ -34,9 +34,9 @@ export function registerCrmTools(server: McpServer, client: ZentriaClient): void
         customerId: z.number().int().positive().optional().describe("Only leads of this customer."),
         campaignId: z.number().int().positive().optional().describe("Only leads of this campaign."),
         source: z
-          .enum(["elementor", "voys", "mail"])
+          .enum(["elementor", "voys", "tentelecom", "mail"])
           .optional()
-          .describe("Where the lead first came in: elementor (form), voys (phone) or mail."),
+          .describe("Where the lead first came in: elementor (form), voys or tentelecom (phone, 10telecom) or mail."),
         leadValueCategory: z
           .string()
           .optional()
@@ -276,7 +276,7 @@ export function registerCrmTools(server: McpServer, client: ZentriaClient): void
       customerId: z.number().int().positive().optional().describe("Only submissions of this customer."),
       campaignId: z.number().int().positive().optional().describe("Only submissions of this campaign."),
       leadId: z.number().int().positive().optional().describe("Only submissions linked to this CRM lead."),
-      source: z.enum(["elementor", "voys", "mail"]).optional().describe("Where the submission came in."),
+      source: z.enum(["elementor", "voys", "tentelecom", "mail"]).optional().describe("Where the submission came in. voys and tentelecom (10telecom) are phone calls."),
       status: z
         .string()
         .optional()
@@ -444,7 +444,7 @@ export function registerCrmTools(server: McpServer, client: ZentriaClient): void
     "list-crm-calls",
     {
       description:
-        "List Voys phone calls of the team, newest first (GET /api/public/crm/calls). Each call has direction, answered, outcome, duration, numbers, AI summary and the linked lead id. Use get-crm-call for the transcript. Scope: crm:read.",
+        "List phone calls of the team (Voys and 10telecom), newest first (GET /api/public/crm/calls). Each call has provider (voys or tentelecom), direction, answered, outcome, duration, numbers, AI summary and the linked lead id. Use get-crm-call for the transcript. Scope: crm:read.",
       annotations: { readOnlyHint: true },
       inputSchema: z.object({
         ...paginationSchema,
@@ -464,6 +464,7 @@ export function registerCrmTools(server: McpServer, client: ZentriaClient): void
           .enum(["live_conversation", "voicemail", "busy", "unavailable", "machine", "missed"])
           .optional()
           .describe("Call outcome. missed means nobody answered."),
+        provider: z.enum(["voys", "tentelecom"]).optional().describe("Telephony provider: voys or tentelecom (10telecom)."),
         direction: z.enum(["incoming", "outgoing"]).optional().describe("Call direction."),
         answered: z.boolean().optional().describe("true for answered calls, false for unanswered calls."),
         phone: z.string().optional().describe("Partial phone number of the caller or the number called."),
@@ -480,6 +481,7 @@ export function registerCrmTools(server: McpServer, client: ZentriaClient): void
           campaignId: input.campaignId,
           leadId: input.leadId,
           outcome: input.outcome,
+          provider: input.provider,
           direction: input.direction,
           answered: input.answered,
           phone: input.phone,
@@ -492,7 +494,7 @@ export function registerCrmTools(server: McpServer, client: ZentriaClient): void
     "get-crm-call",
     {
       description:
-        "Fetch one Voys phone call with its transcript, AI summary and linked CRM lead (GET /api/public/crm/calls/{id}). Scope: crm:read.",
+        "Fetch one phone call (Voys or 10telecom) with its transcript, AI summary and linked CRM lead (GET /api/public/crm/calls/{id}). Scope: crm:read.",
       annotations: { readOnlyHint: true },
       inputSchema: z.object({
         id: z.number().int().positive().describe("Call id."),

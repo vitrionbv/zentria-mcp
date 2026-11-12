@@ -263,6 +263,29 @@ export function registerConnectionTools(server: McpServer, client: ZentriaClient
     destructive: true,
   });
 
+  // All phone numbers of a campaign with their provider
+  const phoneLine = z.object({
+    number: z.string().regex(/^\+[1-9]\d{6,14}$/).describe("International format, for example +31851093749."),
+    provider: z.enum(["voys", "tentelecom"]).describe("voys or tentelecom (10telecom)."),
+  });
+
+  registerApiTool(server, client, {
+    name: "get-campaign-phone-lines",
+    description:
+      "Get all phone numbers of a campaign, each with the telephony provider that delivers its calls: voys or tentelecom (10telecom) (GET /api/public/campaigns/{campaignId}/phone-lines). Scope: connections:read.",
+    path: "/api/public/campaigns/{campaignId}/phone-lines",
+    input: { campaignId },
+  });
+
+  registerApiTool(server, client, {
+    name: "set-campaign-phone-lines",
+    description:
+      "Replace all phone numbers of a campaign with a list of {number, provider} (PUT /api/public/campaigns/{campaignId}/phone-lines). Use this to move a number from Voys to 10telecom: send the full list with the new provider. An empty list removes every number. Scope: connections:write.",
+    method: "PUT",
+    path: "/api/public/campaigns/{campaignId}/phone-lines",
+    input: { campaignId, lines: z.array(phoneLine) },
+  });
+
   // Generic integrations
   const provider = z.enum(["wordpress", "google_search_console", "google_analytics"]);
 
@@ -362,4 +385,65 @@ export function registerConnectionTools(server: McpServer, client: ZentriaClient
     input: { id: connectionId("Voys account") },
     destructive: true,
   });
+
+  // 10telecom (TRiNG) connections of the team
+  const tenantCode = z.string().min(1).max(64).regex(/^[A-Za-z0-9_-]+$/).describe("10telecom tenant code, for example T1234567890.");
+  const baseUrl = z.string().url().max(255).describe("https address on tring.nu, default https://web2.tring.nu.");
+
+  registerApiTool(server, client, {
+    name: "list-crm-tentelecom-connections",
+    description:
+      "List the 10telecom connections of the team without API keys, with webhook URL and last poll, webhook and transcript times (GET /api/public/crm/tentelecom-connections). Needs the CRM leads module and the permission to manage telephony. Scope: connections:read.",
+    path: "/api/public/crm/tentelecom-connections",
+    input: page,
+  });
+
+  registerApiTool(server, client, {
+    name: "get-crm-tentelecom-connection",
+    description:
+      "Get a 10telecom connection of the team (GET /api/public/crm/tentelecom-connections/{id}). hasApiKey says whether a key is stored; the key and the webhook secret are never returned. Scope: connections:read.",
+    path: "/api/public/crm/tentelecom-connections/{id}",
+    input: { id: connectionId("10telecom connection") },
+  });
+
+  registerApiTool(server, client, {
+    name: "create-crm-tentelecom-connection",
+    description:
+      "Add a 10telecom connection to the team (POST /api/public/crm/tentelecom-connections). The API key is write-only. The webhook secret for 10telecom is shown in the app only. Scope: connections:write.",
+    method: "POST",
+    path: "/api/public/crm/tentelecom-connections",
+    input: {
+      name: z.string().min(1).max(255),
+      tenantCode,
+      apiKey: z.string().min(8).max(512),
+      baseUrl: baseUrl.optional(),
+      isActive: z.boolean().optional().describe("Default true."),
+    },
+  });
+
+  registerApiTool(server, client, {
+    name: "update-crm-tentelecom-connection",
+    description:
+      "Update a 10telecom connection: name, tenantCode, baseUrl, isActive and apiKey (PUT /api/public/crm/tentelecom-connections/{id}). A blank or missing apiKey keeps the stored key; fields you leave out stay as they are. Scope: connections:write.",
+    method: "PUT",
+    path: "/api/public/crm/tentelecom-connections/{id}",
+    input: {
+      id: connectionId("10telecom connection"),
+      name: z.string().min(1).max(255).optional(),
+      tenantCode: tenantCode.optional(),
+      apiKey: z.string().min(8).max(512).optional(),
+      baseUrl: baseUrl.optional(),
+      isActive: z.boolean().optional(),
+    },
+  });
+
+  registerApiTool(server, client, {
+    name: "delete-crm-tentelecom-connection",
+    description: "Delete a 10telecom connection of the team (DELETE /api/public/crm/tentelecom-connections/{id}). Scope: connections:write.",
+    method: "DELETE",
+    path: "/api/public/crm/tentelecom-connections/{id}",
+    input: { id: connectionId("10telecom connection") },
+    destructive: true,
+  });
 }
+

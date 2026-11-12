@@ -54,7 +54,7 @@ const splitGroup = z.object({
   keepsSource: z.boolean().describe("True for the one group that stays the original campaign."),
   itemKeys: z
     .array(z.string())
-    .describe("Keys of the mailboxes, forms and Voys numbers for this campaign, from context.items of a split proposal. Every item must be in exactly one group."),
+    .describe("Keys of the mailboxes, forms and phone numbers (Voys and 10telecom) for this campaign, from context.items of a split proposal. Every item must be in exactly one group."),
   categoryKeys: z.array(z.string()).describe("Lead value category keys this campaign accepts."),
   monthlyAmountCents: z.number().int().min(0).nullable().optional().describe("Monthly amount in euro cents for this campaign."),
 });
@@ -174,7 +174,7 @@ export function registerCampaignTools(server: McpServer, client: ZentriaClient):
   registerApiTool(server, client, {
     name: "propose-campaign-split",
     description:
-      "Ask for a proposal to split a campaign into several campaigns, one per brand or website (POST /api/public/campaigns/{id}/split-proposal). Returns groups plus context.items with the key of every mailbox, form and Voys number. It uses AI and falls back to rules; limited to 10 per minute. Changes nothing. Scope: campaigns:write.",
+      "Ask for a proposal to split a campaign into several campaigns, one per brand or website (POST /api/public/campaigns/{id}/split-proposal). Returns groups plus context.items with the key of every mailbox, form and phone number (Voys or 10telecom). It uses AI and falls back to rules; limited to 10 per minute. Changes nothing. Scope: campaigns:write.",
     method: "POST",
     path: "/api/public/campaigns/{id}/split-proposal",
     input: {
@@ -186,7 +186,7 @@ export function registerCampaignTools(server: McpServer, client: ZentriaClient):
   registerApiTool(server, client, {
     name: "split-campaign",
     description:
-      "Split a campaign into several campaigns (POST /api/public/campaigns/{id}/split). Needs 2 to 20 groups, exactly one with keepsSource true, and every itemKey from propose-campaign-split in exactly one group. Mailboxes, forms and Voys numbers move to the new campaigns; undo with undo-campaign-split. Scope: campaigns:write.",
+      "Split a campaign into several campaigns (POST /api/public/campaigns/{id}/split). Needs 2 to 20 groups, exactly one with keepsSource true, and every itemKey from propose-campaign-split in exactly one group. Mailboxes, forms and phone numbers move to the new campaigns; undo with undo-campaign-split. Scope: campaigns:write.",
     method: "POST",
     path: "/api/public/campaigns/{id}/split",
     input: {
@@ -217,7 +217,7 @@ export function registerCampaignTools(server: McpServer, client: ZentriaClient):
   registerApiTool(server, client, {
     name: "undo-campaign-split",
     description:
-      "Undo a campaign split: the new campaigns are removed and their mailboxes, forms and Voys numbers move back (POST /api/public/campaign-split-runs/{id}/undo). Refused after a newer split or an issued invoice. Scope: campaigns:write.",
+      "Undo a campaign split: the new campaigns are removed and their mailboxes, forms and phone numbers move back (POST /api/public/campaign-split-runs/{id}/undo). Refused after a newer split or an issued invoice. Scope: campaigns:write.",
     method: "POST",
     path: "/api/public/campaign-split-runs/{id}/undo",
     input: { id: z.number().int().positive().describe("Split run id.") },
