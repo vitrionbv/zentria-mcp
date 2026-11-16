@@ -5,18 +5,41 @@ import { paginationSchema, registerApiTool } from "./_shared.js";
 
 const campaignId = z.number().int().positive().describe("Campaign id from list-campaigns.");
 
-const categoryAssignment = z.object({
+export const categoryAssignment = z.object({
   key: z
     .string()
     .min(1)
-    .describe("Lead value category key from list-crm-lead-value-categories, or other for leads without a category."),
+    .optional()
+    .describe(
+      "Lead value category key from list-crm-lead-value-categories, or other for leads without a category. Required unless new is true.",
+    ),
+  new: z
+    .boolean()
+    .optional()
+    .describe(
+      "True creates a new category that belongs to this campaign only and accepts it right away, so no key is needed. Its name only has to be unique within this campaign. Needs label and amountCentsOverride.",
+    ),
+  label: z
+    .string()
+    .min(1)
+    .max(255)
+    .optional()
+    .describe("Name of the new category. Required when new is true. With a key of a category of this campaign, renames it."),
+  aiHints: z
+    .string()
+    .max(5000)
+    .nullable()
+    .optional()
+    .describe("Text that tells the AI which leads belong in this category. Used with new, or to change a category of this campaign."),
   amountCentsOverride: z
     .number()
     .int()
     .min(0)
     .nullable()
     .optional()
-    .describe("Value in euro cents that replaces the category amount for this campaign."),
+    .describe(
+      "Value in euro cents that replaces the category amount for this campaign. For a new category this is its amount.",
+    ),
   whitelistText: z
     .string()
     .nullable()
@@ -118,7 +141,7 @@ export function registerCampaignTools(server: McpServer, client: ZentriaClient):
   registerApiTool(server, client, {
     name: "update-campaign",
     description:
-      "Update a campaign: name, monthly amount in euro cents (null clears it), missing phone share, services, phone subscription and optionally the lead value categories it accepts (PUT /api/public/campaigns/{id}). Fields you leave out stay as they are. allowedLeadValueCategories replaces the whole set. Scope: campaigns:write.",
+      "Update a campaign: name, monthly amount in euro cents (null clears it), missing phone share, services, phone subscription and optionally the lead value categories it accepts (PUT /api/public/campaigns/{id}). Fields you leave out stay as they are. allowedLeadValueCategories replaces the whole set, so pass the categories the campaign already has again. To make a category for this campaign only, add an item with new: true, label, amountCentsOverride and optionally aiHints. Scope: campaigns:write.",
     method: "PUT",
     path: "/api/public/campaigns/{id}",
     input: {
@@ -162,7 +185,7 @@ export function registerCampaignTools(server: McpServer, client: ZentriaClient):
   registerApiTool(server, client, {
     name: "set-campaign-lead-value-categories",
     description:
-      "Replace the lead value categories a campaign accepts, with an optional amount override, whitelist or blacklist per category (PUT /api/public/campaigns/{id}/lead-value-categories). An empty list clears them. Use the key other for leads without a category. Scope: campaigns:write.",
+      "Replace the lead value categories a campaign accepts, with an optional amount override, whitelist or blacklist per category (PUT /api/public/campaigns/{id}/lead-value-categories). An empty list clears them. Use the key other for leads without a category. An item with new: true, label, amountCentsOverride and optionally aiHints creates a category for this campaign only. Scope: campaigns:write.",
     method: "PUT",
     path: "/api/public/campaigns/{id}/lead-value-categories",
     input: {
