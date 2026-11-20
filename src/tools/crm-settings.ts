@@ -11,7 +11,7 @@ const categoryKey = z
   );
 
 const customerRange = z
-  .enum(["today", "month", "previous_month", "7", "14", "30", "60", "90", "custom"])
+  .enum(["today", "yesterday", "month", "previous_month", "7", "14", "30", "60", "90", "custom"])
   .optional()
   .describe("Period. Default month (start of this month until now). Use custom with from and to.");
 
@@ -180,7 +180,7 @@ export function registerCrmSettingsTools(server: McpServer, client: ZentriaClien
       customerId: z.number().int().positive().optional().describe("Customer to report on. Required unless campaignId is given."),
       campaignId: z.number().int().positive().optional().describe("Report on one campaign of the customer."),
       range: z
-        .enum(["today", "month", "previous_month", "7", "14", "30", "60", "90", "custom"])
+        .enum(["today", "yesterday", "month", "previous_month", "7", "14", "30", "60", "90", "custom"])
         .optional()
         .describe("Period. Default month. Use custom with from and to."),
       from: z.string().optional().describe("First day (YYYY-MM-DD), required for range custom."),

@@ -35,7 +35,7 @@ export function registerInvoiceTools(server: McpServer, client: ZentriaClient): 
       customerId: z.number().int().positive().optional().describe("Only invoices of this customer."),
       status: z.enum(INVOICE_STATUSES).optional(),
       period: z.string().regex(/^\d{4}-W\d{2}$/).optional().describe("ISO week of the invoice, for example 2026-W07."),
-      outstanding: z.boolean().optional().describe("true: only invoices that still have to be paid: ready, sent, failed or overdue. Drafts and charged back invoices are left out."),
+      outstanding: z.boolean().optional().describe("true: only invoices that still have to be paid: ready, sent, failed, overdue or charged back. Drafts are left out."),
       withLines: z.boolean().optional().describe("true: include the invoice lines."),
     },
   });
